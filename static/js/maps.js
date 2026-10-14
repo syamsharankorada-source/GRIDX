@@ -4,52 +4,64 @@ window.customerMarker = null;
 window.createGridXPin = function(bgHex, textHex, borderHex, labelText) {
     return L.divIcon({
         className: 'gridx-custom-pin',
-        html: `<div style="background:${bgHex};color:${textHex};border:3px solid ${borderHex};padding:4px 9px;border-radius:20px;font-weight:900;font-size:11px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.45);display:inline-flex;align-items:center;gap:4px;">
+        html: `<div style="background:${bgHex};color:${textHex};border:2.5px solid ${borderHex};padding:4px 10px;border-radius:20px;font-weight:800;font-size:11px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.45);display:inline-flex;align-items:center;gap:5px;">
                 <span style="width:8px;height:8px;border-radius:50%;background:${textHex};display:inline-block;"></span>${labelText}
                </div>`,
-        iconSize: [110, 30],
-        iconAnchor: [55, 15]
+        iconSize: [120, 30],
+        iconAnchor: [60, 15]
     });
+};
+
+window.addReliableMapTiles = function(mapInstance) {
+    // Primary: CartoDB Positron/Voyager + Fallback: Esri World Street Map (Never returns 403 OSM volunteer block)
+    const primaryLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd',
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+    });
+
+    const backupLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: '&copy; Esri &copy; OpenStreetMap'
+    });
+
+    let switchedToBackup = false;
+    primaryLayer.on('tileerror', function() {
+        if (!switchedToBackup) {
+            switchedToBackup = true;
+            mapInstance.removeLayer(primaryLayer);
+            backupLayer.addTo(mapInstance);
+        }
+    });
+
+    primaryLayer.addTo(mapInstance);
 };
 
 window.initCustomerDashboardMap = function(defaultLat, defaultLng, providersData) {
     const mapEl = document.getElementById('dashboard-map');
-    if (!mapEl) return;
-
-    if (typeof L === 'undefined') {
-        mapEl.innerHTML = '<div class="p-4 text-dark fw-bold">Interactive Coordinate Grid Active (16.5062, 80.6480)</div>';
-        return;
-    }
+    if (!mapEl || typeof L === 'undefined') return;
 
     if (window.gridxMap) {
         window.gridxMap.remove();
     }
 
     window.gridxMap = L.map('dashboard-map', { zoomControl: true }).setView([defaultLat, defaultLng], 13);
+    window.addReliableMapTiles(window.gridxMap);
 
-    // Reliable OpenStreetMap Standard Tiles (styled in White, Black & Yellow via CSS)
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap | GRIDX White-Black-Yellow Radar'
-    }).addTo(window.gridxMap);
-
-    // Force Leaflet container resize calculation so tiles never appear grey/blank
     setTimeout(() => { window.gridxMap.invalidateSize(); }, 200);
 
-    // Yellow & Black Customer Pin
     window.customerMarker = L.marker([defaultLat, defaultLng], {
         draggable: true,
         icon: window.createGridXPin('#FFD000', '#07080B', '#07080B', 'YOUR LOCATION')
-    }).addTo(window.gridxMap).bindPopup('<b>YOUR SERVICE PIN</b><br><span style="color:#FFD000;">Drag pin or click anywhere on map</span>').openPopup();
+    }).addTo(window.gridxMap).bindPopup('<b>Your Location</b><br><span style="color:#FFD000;">Touch or drag this pin to your exact spot</span>').openPopup();
 
-    // Service Zone Circle in Black + Yellow
     window.zoneCircle = L.circle([defaultLat, defaultLng], {
         radius: 2500,
         color: '#07080B',
         weight: 2,
         dashArray: '6, 6',
         fillColor: '#FFD000',
-        fillOpacity: 0.18
+        fillOpacity: 0.15
     }).addTo(window.gridxMap);
 
     window.customerMarker.on('dragend', function(e) {
@@ -64,11 +76,10 @@ window.initCustomerDashboardMap = function(defaultLat, defaultLng, providersData
         window.updateBookingCoordinates(e.latlng.lat, e.latlng.lng);
     });
 
-    // Black & Yellow Provider Markers
     (providersData || []).forEach(p => {
         L.marker([p.lat, p.lng], {
-            icon: window.createGridXPin('#07080B', '#FFD000', '#FFD000', 'PRO ★ ' + (p.rating || '4.9'))
-        }).addTo(window.gridxMap).bindPopup(`<b style="color:#FFD000;">${p.name}</b><br>Verified GRIDX Partner`);
+            icon: window.createGridXPin('#07080B', '#FFD000', '#FFD000', 'MECHANIC ★ ' + (p.rating || '4.9'))
+        }).addTo(window.gridxMap).bindPopup(`<b style="color:#FFD000;">${p.name}</b><br>Available Nearby`);
     });
 };
 
@@ -77,8 +88,6 @@ window.updateBookingCoordinates = async function(lat, lng) {
     const lngEl = document.getElementById('customer_lng');
     if (latEl) latEl.value = Number(lat).toFixed(6);
     if (lngEl) lngEl.value = Number(lng).toFixed(6);
-    const hud = document.getElementById('map-coord-hud');
-    if (hud) hud.textContent = `PIN: ${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
 };
 
 window.setQuickCityPreset = function(lat, lng, label) {
@@ -91,11 +100,11 @@ window.setQuickCityPreset = function(lat, lng, label) {
         if (window.zoneCircle) window.zoneCircle.setLatLng([lat, lng]);
         window.gridxMap.invalidateSize();
     }
-    showToast(`Switched Grid Zone: ${label}`);
+    showToast(`Location set to ${label}`);
 };
 
 window.detectBrowserGeolocation = function() {
-    if (!navigator.geolocation) return showToast('Browser Geolocation not supported.', 'danger');
+    if (!navigator.geolocation) return showToast('Phone/Browser GPS not available.', 'danger');
     navigator.geolocation.getCurrentPosition(pos => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
@@ -106,6 +115,6 @@ window.detectBrowserGeolocation = function() {
             if (window.zoneCircle) window.zoneCircle.setLatLng([lat, lng]);
             window.gridxMap.invalidateSize();
         }
-        showToast('Live GPS coordinates locked!');
-    }, () => showToast('GPS permission denied. Click on the white/yellow map to set pin.', 'warning'));
+        showToast('Found your current location!');
+    }, () => showToast('Could not get GPS. Please click your spot on the map.', 'warning'));
 };

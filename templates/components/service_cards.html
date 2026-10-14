@@ -1,12 +1,12 @@
 <div class="d-flex flex-wrap gap-2 mb-3">
     <button type="button" class="btn btn-sm btn-gridx-outline domain-filter-btn active" onclick="filterCategoryDomain('ALL', this)">
-        <i class="bi bi-grid-fill me-1"></i> All Grid Services ({{ categories|length }})
+        All Services ({{ categories|length }})
     </button>
     <button type="button" class="btn btn-sm btn-gridx-outline domain-filter-btn" onclick="filterCategoryDomain('OUTDOOR', this)">
-        <i class="bi bi-car-front-fill me-1"></i> Outdoor Roadside
+        🚲🚗 Vehicle & Road Help
     </button>
     <button type="button" class="btn btn-sm btn-gridx-outline domain-filter-btn" onclick="filterCategoryDomain('INDOOR', this)">
-        <i class="bi bi-house-gear-fill me-1"></i> Indoor Home Assistance
+        🏠 Home Repair (Electrician / Plumber)
     </button>
 </div>
 
@@ -21,12 +21,12 @@
                     <div class="p-2 rounded-3" style="background:rgba(255,208,0,0.12);">
                         <i class="bi {{ cat.icon }} fs-4 text-warning"></i>
                     </div>
-                    <span class="badge {% if cat.domain == 'OUTDOOR' %}badge-domain-outdoor{% else %}badge-domain-indoor{% endif %}" style="font-size:0.62rem;">
-                        {{ cat.domain }}
+                    <span class="badge {% if cat.domain == 'OUTDOOR' %}badge-domain-outdoor{% else %}badge-domain-indoor{% endif %}" style="font-size:0.65rem;">
+                        {% if cat.domain == 'OUTDOOR' %}VEHICLE{% else %}HOME{% endif %}
                     </span>
                 </div>
                 <h6 class="fw-bold mb-1 text-white">{{ cat.name }}</h6>
-                <p class="text-secondary small mb-2" style="font-size:0.75rem; line-height:1.35;">{{ cat.description|truncatechars:60 }}</p>
+                <p class="text-secondary small mb-2" style="font-size:0.76rem; line-height:1.35;">{{ cat.description|truncatechars:60 }}</p>
             </div>
             <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary">
                 <span class="small text-secondary">Starts at</span>

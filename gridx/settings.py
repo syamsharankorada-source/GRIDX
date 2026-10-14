@@ -29,14 +29,13 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.context_processors',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Keep clean middleware list
-MIDDLEWARE = [m for m in MIDDLEWARE if m != 'django.contrib.auth.context_processors']
+# Essential so map tile servers receive Referer header and never return 403 Blocked
+SECURE_REFERRER_POLICY = 'origin-when-cross-origin'
 
 ROOT_URLCONF = 'gridx.urls'
 
@@ -102,15 +101,15 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '60/minute',
         'user': '240/minute',
-        'ai_assistant': '20/minute',
+        'ai_assistant': '40/minute',
     },
 }
 
-GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
-GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
+GROQ_API_KEY = os.getenv('GROQ_API_KEY', '').strip()
+GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile').strip()
 GROQ_TIMEOUT = int(os.getenv('GROQ_TIMEOUT', '15'))
 
-DEFAULT_CITY = os.getenv('DEFAULT_CITY', 'Guntur & Vijayawada, AP')
+DEFAULT_CITY = os.getenv('DEFAULT_CITY', 'Vijayawada & Guntur')
 DEFAULT_LAT = float(os.getenv('DEFAULT_LAT', '16.5062'))
 DEFAULT_LNG = float(os.getenv('DEFAULT_LNG', '80.6480'))
 DEFAULT_SEARCH_RADIUS_KM = float(os.getenv('DEFAULT_SEARCH_RADIUS_KM', '15.0'))
