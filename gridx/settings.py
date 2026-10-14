@@ -7,7 +7,14 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-gridx-local-key')
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
-ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS','gridx-86xi.onrender.com', '127.0.0.1', 'localhost', 'testserver').split(',') if h.strip()]
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.getenv(
+        'ALLOWED_HOSTS',
+        'gridx-86xi.onrender.com,127.0.0.1,localhost,testserver'
+    ).split(',')
+    if h.strip()
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
