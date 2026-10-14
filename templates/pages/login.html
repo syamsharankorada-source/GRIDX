@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="gridx-card p-4">
+            <div class="text-center mb-3">
+                <span class="badge badge-domain-outdoor mb-2">SECURE ROLE-AWARE ACCESS</span>
+                <h3 class="fw-black mb-1">SIGN IN TO GRID <span class="text-warning">X</span></h3>
+                <p class="small text-secondary">Automatically routes to Customer Grid or Provider Console</p>
+            </div>
+
+            <div class="p-3 rounded mb-3" style="background:#0B0E14; border:1px dashed var(--gridx-yellow);">
+                <div class="small fw-bold text-warning mb-2"><i class="bi bi-lightning-fill"></i> 1-Click Instant Demo Credentials:</div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-gridx flex-grow-1" onclick="fillDemo('demo_customer', 'gridxpassword123')">
+                        Fill Demo Customer
+                    </button>
+                    <button type="button" class="btn btn-sm btn-gridx-outline flex-grow-1" onclick="fillDemo('ravi_mech', 'gridxpassword123')">
+                        Fill Demo Provider
+                    </button>
+                </div>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-gridx w-100 py-2 mt-1">ENTER DISPATCH GRID</button>
+            </form>
+
+            <div class="mt-3 text-center small text-secondary">
+                New to GRIDX? <a href="{% url 'register' %}?role=customer" class="text-warning fw-bold">Create Customer Account</a> •
+                <a href="{% url 'register' %}?role=provider" class="text-warning fw-bold">Register as Provider</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function fillDemo(user, pass) {
+    document.getElementById('id_username').value = user;
+    document.getElementById('id_password').value = pass;
+    showToast(`Filled ${user} credentials. Click ENTER DISPATCH GRID!`);
+}
+</script>
+{% endblock %}

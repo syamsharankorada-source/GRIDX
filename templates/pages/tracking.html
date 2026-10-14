@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+        <span class="badge bg-warning text-dark fw-black me-2">LIVE TELEMETRY #{{ booking.id }}</span>
+        <h4 class="fw-black d-inline mb-0">{{ booking.category.name }}</h4>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        {% if booking.provider and booking.status in 'accepted,en_route' %}
+            <button class="btn btn-sm btn-gridx" onclick="performBookingAction({{ booking.id }}, 'simulate_step')">
+                <i class="bi bi-cursor-fill me-1"></i> Simulate Provider Moving Closer
+            </button>
+        {% endif %}
+        <button class="btn btn-sm btn-gridx-outline" onclick="recenterRadar()"><i class="bi bi-arrows-fullscreen"></i> Recenter</button>
+        <a href="{% url 'booking_detail' booking.id %}" class="btn btn-sm btn-outline-light">Invoice & Review</a>
+    </div>
+</div>
+
+<div class="stepper-wrapper mb-4">
+    {% for key, label, icon in steps %}
+        <div class="stepper-item {% if forloop.counter0 < current_idx %}completed{% elif forloop.counter0 == current_idx %}active{% endif %}">
+            <i class="bi {{ icon }} d-block fs-5 mb-1"></i>
+            <div style="font-size:0.72rem;">{{ label }}</div>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="gridx-card p-3">
+            <div class="map-wrapper">
+                <div class="map-hud-badge">WHITE • BLACK • YELLOW LIVE RADAR</div>
+                <div id="tracking-map" class="map-container" style="height:430px !important;"></div>
+            </div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-2 small text-secondary">
+                <span id="tracking-eta-banner"><span class="live-dot me-2"></span>Syncing GRIDX GPS Telemetry...</span>
+                <span id="tracking-timestamp"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="gridx-card p-4 mb-3 border-top border-3 border-warning">
+            <div class="small text-warning fw-bold text-uppercase">Current Dispatch State</div>
+            <h3 id="live-status-label" class="fw-black mb-2">{{ booking.get_status_display }}</h3>
+            <p class="small text-secondary mb-3"><i class="bi bi-geo-alt text-warning"></i> {{ booking.customer_address }}</p>
+
+            {% if is_assigned_provider %}
+                <div class="d-grid gap-2 mb-3">
+                    {% if booking.status == 'accepted' %}
+                        <button class="btn btn-gridx" onclick="performBookingAction({{ booking.id }}, 'en_route')">Mark En Route</button>
+                    {% elif booking.status == 'en_route' %}
+                        <button class="btn btn-gridx" onclick="performBookingAction({{ booking.id }}, 'arrived')">Mark Arrived at Customer</button>
+                    {% elif booking.status == 'arrived' %}
+                        <button class="btn btn-gridx" onclick="performBookingAction({{ booking.id }}, 'in_progress')">Start Repair Work</button>
+                    {% elif booking.status == 'in_progress' %}
+                        <button class="btn btn-success fw-bold" onclick="performBookingAction({{ booking.id }}, 'completed')">Complete Job & Generate Invoice</button>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if booking.status in 'requested,searching,no_provider' and is_owner %}
+                <div class="alert alert-dark border-warning small py-2">
+                    Tip: Open an Incognito window and log in as <code>ravi_mech</code> / <code>gridxpassword123</code> to accept this broadcast!
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm btn-gridx" onclick="performBookingAction({{ booking.id }}, 'expand_radius')">
+                        <i class="bi bi-arrows-angle-expand"></i> Emergency Radius Expansion (35 km)
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="performBookingAction({{ booking.id }}, 'cancel')">
+                        Cancel Service Request
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="gridx-card p-4">
+            <h6 class="fw-bold text-warning mb-3"><i class="bi bi-activity me-1"></i> Audit Timeline</h6>
+            <div id="timeline-box" class="small">
+                {% for h in booking.status_history.all %}
+                    <div class="mb-2 border-start border-2 border-warning ps-2">
+                        <strong class="text-white text-uppercase">{{ h.to_status }}</strong>
+                        <div class="text-secondary" style="font-size:0.76rem;">{{ h.note }} • {{ h.timestamp|date:"H:i:s" }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let tMap = null, cMarker = null, pMarker = null, routeOutline = null, routeCenterLine = null;
+const custLat = {{ booking.customer_lat }};
+const custLng = {{ booking.customer_lng }};
+
+window.addEventListener('load', function() {
+    tMap = L.map('tracking-map').setView([custLat, custLng], 14);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap | GRIDX Radar'
+    }).addTo(tMap);
+
+    setTimeout(() => { tMap.invalidateSize(); }, 200);
+
+    cMarker = L.marker([custLat, custLng], {
+        icon: window.createGridXPin('#FFD000', '#07080B', '#07080B', 'CUSTOMER PIN')
+    }).addTo(tMap).bindPopup('<b>Customer Breakdown Location</b>').openPopup();
+
+    pollTracking();
+    setInterval(pollTracking, 4000);
+});
+
+async function drawBlackYellowRoute(lat1, lng1, lat2, lng2) {
+    let coords = [[lat1, lng1], [lat2, lng2]];
+    try {
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.routes && data.routes.length > 0) {
+                coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            }
+        }
+    } catch (e) {}
+
+    if (routeOutline) tMap.removeLayer(routeOutline);
+    if (routeCenterLine) tMap.removeLayer(routeCenterLine);
+
+    // Outer Black Casing + Inner Electric Yellow Line for high contrast on White Map
+    routeOutline = L.polyline(coords, { color: '#07080B', weight: 9, opacity: 0.95 }).addTo(tMap);
+    routeCenterLine = L.polyline(coords, { color: '#FFD000', weight: 5, opacity: 1.0 }).addTo(tMap);
+}
+
+async function pollTracking() {
+    try {
+        const res = await fetch('/api/bookings/{{ booking.id }}/tracking/');
+        if (!res.ok) return;
+        const d = await res.json();
+        document.getElementById('live-status-label').textContent = d.status_display;
+        document.getElementById('tracking-timestamp').textContent = d.last_updated ? 'Telemetry synced: ' + new Date(d.last_updated).toLocaleTimeString() : 'Waiting for assignment';
+
+        if (d.provider_location) {
+            const pLat = d.provider_location.lat;
+            const pLng = d.provider_location.lng;
+            if (!pMarker) {
+                pMarker = L.marker([pLat, pLng], {
+                    icon: window.createGridXPin('#07080B', '#FFD000', '#FFD000', 'MECHANIC EN ROUTE')
+                }).addTo(tMap).bindPopup(`<b style="color:#FFD000;">${d.provider_location.name}</b><br>Tel: ${d.provider_location.phone}`);
+            } else {
+                pMarker.setLatLng([pLat, pLng]);
+            }
+            await drawBlackYellowRoute(pLat, pLng, custLat, custLng);
+            document.getElementById('tracking-eta-banner').innerHTML = `<span class="live-dot me-2"></span><strong class="text-warning">${d.provider_location.name}</strong> (★ ${d.provider_location.rating}) • <strong>${d.distance_km} km</strong> away • Est. ETA: <strong>~${d.eta_mins} mins</strong>`;
+        } else {
+            document.getElementById('tracking-eta-banner').innerHTML = `<span class="live-dot me-2"></span>Broadcasting to verified providers in Vijayawada-Guntur Grid...`;
+        }
+    } catch (e) {}
+}
+
+function recenterRadar() {
+    if (tMap) {
+        tMap.setView([custLat, custLng], 14);
+        tMap.invalidateSize();
+    }
+}
+</script>
+{% endblock %}

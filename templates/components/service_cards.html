@@ -1,0 +1,38 @@
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <button type="button" class="btn btn-sm btn-gridx-outline domain-filter-btn active" onclick="filterCategoryDomain('ALL', this)">
+        <i class="bi bi-grid-fill me-1"></i> All Grid Services ({{ categories|length }})
+    </button>
+    <button type="button" class="btn btn-sm btn-gridx-outline domain-filter-btn" onclick="filterCategoryDomain('OUTDOOR', this)">
+        <i class="bi bi-car-front-fill me-1"></i> Outdoor Roadside
+    </button>
+    <button type="button" class="btn btn-sm btn-gridx-outline domain-filter-btn" onclick="filterCategoryDomain('INDOOR', this)">
+        <i class="bi bi-house-gear-fill me-1"></i> Indoor Home Assistance
+    </button>
+</div>
+
+<div class="row g-3">
+    {% for cat in categories %}
+    <div class="col-6 col-md-4 col-xl-3 service-cat-col" data-domain="{{ cat.domain }}" data-slug="{{ cat.slug }}">
+        <div class="gridx-card service-cat-card p-3 h-100 d-flex flex-column justify-content-between {% if forloop.first %}active{% endif %}"
+             data-id="{{ cat.id }}"
+             onclick="selectServiceCategory('{{ cat.id }}', '{{ cat.name|escapejs }}')">
+            <div>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="p-2 rounded-3" style="background:rgba(255,208,0,0.12);">
+                        <i class="bi {{ cat.icon }} fs-4 text-warning"></i>
+                    </div>
+                    <span class="badge {% if cat.domain == 'OUTDOOR' %}badge-domain-outdoor{% else %}badge-domain-indoor{% endif %}" style="font-size:0.62rem;">
+                        {{ cat.domain }}
+                    </span>
+                </div>
+                <h6 class="fw-bold mb-1 text-white">{{ cat.name }}</h6>
+                <p class="text-secondary small mb-2" style="font-size:0.75rem; line-height:1.35;">{{ cat.description|truncatechars:60 }}</p>
+            </div>
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary">
+                <span class="small text-secondary">Starts at</span>
+                <span class="fw-black text-warning">₹{{ cat.pricing_rule.base_charge|default:"250.00" }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>

@@ -1,0 +1,44 @@
+<nav class="navbar navbar-expand-lg navbar-dark navbar-gridx sticky-top py-2">
+    <div class="container">
+        <a class="brand-logo" href="{% url 'home' %}">GRID <span>X</span></a>
+        <span class="badge bg-dark border border-warning text-warning ms-2 d-none d-md-inline-flex align-items-center gap-1">
+            <span class="live-dot"></span> Vijayawada • Guntur Grid
+        </span>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#gridxNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="gridxNav">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-2 mt-2 mt-lg-0">
+                {% if user.is_authenticated %}
+                    {% if user.provider_profile %}
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-gridx" href="{% url 'provider_dashboard' %}">
+                                <i class="bi bi-speedometer2 me-1"></i> Provider Console
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-gridx" href="{% url 'dashboard' %}">
+                                <i class="bi bi-grid-1x2-fill me-1"></i> Customer Grid
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-gridx-outline" href="{% url 'ai_assistant' %}">
+                            <i class="bi bi-robot me-1"></i> GRIDX AI Studio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-light" href="{% url 'logout' %}">
+                            <i class="bi bi-box-arrow-right"></i> {{ user.username }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item"><a class="btn btn-sm btn-outline-light" href="{% url 'login' %}">Sign In</a></li>
+                    <li class="nav-item"><a class="btn btn-sm btn-gridx" href="{% url 'register' %}?role=customer">Request Help</a></li>
+                    <li class="nav-item"><a class="btn btn-sm btn-gridx-outline" href="{% url 'register' %}?role=provider">Partner With Us</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

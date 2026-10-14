@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="gridx-card p-4 h-100">
+            <span class="badge badge-domain-outdoor mb-2">GROQ AI DIAGNOSTIC ENGINE</span>
+            <h4 class="fw-black text-warning mb-2"><i class="bi bi-robot me-1"></i> GRIDX AI STUDIO</h4>
+            <p class="small text-secondary mb-3">
+                Preliminary vehicle & home emergency triage connected directly to live Vijayawada-Guntur pricing rules and your active dispatch telemetry.
+            </p>
+            <h6 class="small fw-bold text-uppercase text-white mb-2">One-Click Diagnostic Prompts</h6>
+            <div class="d-grid gap-2">
+                <button class="btn btn-sm btn-gridx-outline text-start" onclick="sendQuickPrompt('My bike stopped suddenly on the highway. What should I do?', 'studio-input', 'studio-messages')">
+                    🚲 "My bike stopped suddenly. What should I do?"
+                </button>
+                <button class="btn btn-sm btn-gridx-outline text-start" onclick="sendQuickPrompt('My car battery is dead and clicks when turning the key.', 'studio-input', 'studio-messages')">
+                    🔋 "My car battery is dead and clicks."
+                </button>
+                <button class="btn btn-sm btn-gridx-outline text-start" onclick="sendQuickPrompt('What might a flat tyre repair cost?', 'studio-input', 'studio-messages')">
+                    🛞 "What might a flat tyre repair cost?"
+                </button>
+                <button class="btn btn-sm btn-gridx-outline text-start" onclick="sendQuickPrompt('Explain my current booking status and provider ETA.', 'studio-input', 'studio-messages')">
+                    📍 "Explain my current booking status & ETA."
+                </button>
+                <button class="btn btn-sm btn-gridx-outline text-start" onclick="sendQuickPrompt('Our home main MCB keeps tripping repeatedly.', 'studio-input', 'studio-messages')">
+                    ⚡ "Home main MCB keeps tripping."
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="gridx-card d-flex flex-column" style="height: 540px;">
+            <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="live-dot me-2"></span>
+                    <strong class="text-warning">LIVE CONVERSATION</strong>
+                    <small class="text-secondary ms-2">Safety-First Preliminary Guidance</small>
+                </div>
+                <a href="{% url 'dashboard' %}" class="btn btn-sm btn-gridx">Go to Booking Grid</a>
+            </div>
+
+            <div id="studio-messages" class="ai-messages flex-grow-1">
+                <div class="msg-bubble msg-assistant">
+                    ⚡ <strong class="text-warning">GRIDX AI Online.</strong> Share your vehicle symptoms, ask for live price estimates, or check your active mechanic's status.
+                </div>
+                {% for m in messages_history %}
+                    <div class="msg-bubble {% if m.role == 'user' %}msg-user{% else %}msg-assistant{% endif %}">
+                        {{ m.content|linebreaksbr }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <form onsubmit="sendAIMessage(event, 'studio-input', 'studio-messages')" class="p-3 border-top border-secondary d-flex gap-2">
+                <input id="studio-input" type="text" class="form-control gridx-input" placeholder="Describe your vehicle breakdown or home emergency...">
+                <button type="submit" class="btn btn-gridx px-4"><i class="bi bi-send-fill"></i> Send</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

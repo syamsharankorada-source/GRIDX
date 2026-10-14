@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="gridx-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-3">
+                <div>
+                    <span class="badge badge-domain-outdoor mb-1">DISPATCH RECORD #{{ booking.id }}</span>
+                    <h4 class="fw-black mb-0">{{ booking.category.name }}</h4>
+                </div>
+                <span class="badge bg-warning text-dark fs-6">{{ booking.get_status_display }}</span>
+            </div>
+
+            <div class="row g-3 small mb-3">
+                <div class="col-sm-6">
+                    <div class="text-secondary">Customer</div>
+                    <div class="fw-bold text-white">{{ booking.customer.username }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-secondary">Assigned Provider</div>
+                    <div class="fw-bold text-warning">{{ booking.provider.business_name|default:"Pending Assignment" }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-secondary">Service Location</div>
+                    <div class="fw-bold text-white">{{ booking.customer_address }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-secondary">Vehicle / Unit</div>
+                    <div class="fw-bold text-white">{{ booking.vehicle|default:"Standard Unit" }}</div>
+                </div>
+            </div>
+
+            <div class="p-3 rounded mb-3" style="background:#0B0E14;">
+                <div class="small text-secondary mb-1">Reported Problem Description:</div>
+                <div class="text-white">"{{ booking.issue_description }}"</div>
+                {% if booking.issue_photo %}
+                    <div class="mt-2"><img src="{{ booking.issue_photo.url }}" class="img-fluid rounded border border-warning" style="max-height:180px;"></div>
+                {% endif %}
+            </div>
+
+            <h6 class="fw-bold text-warning mb-2">Itemized Pricing Breakdown</h6>
+            <ul class="list-group list-group-flush mb-3">
+                <li class="list-group-item bg-transparent text-light d-flex justify-content-between"><span>Base Service Charge</span><span>₹{{ booking.estimated_base }}</span></li>
+                <li class="list-group-item bg-transparent text-light d-flex justify-content-between"><span>Distance Fee ({{ booking.distance_km }} km)</span><span>₹{{ booking.estimated_distance_cost }}</span></li>
+                <li class="list-group-item bg-transparent text-light d-flex justify-content-between"><span>Emergency Priority Surcharge</span><span>₹{{ booking.estimated_surcharge }}</span></li>
+                <li class="list-group-item bg-transparent text-light d-flex justify-content-between"><span>Platform Fee & GST (18%)</span><span>₹{{ booking.estimated_tax }}</span></li>
+                <li class="list-group-item bg-transparent text-warning fw-black fs-5 d-flex justify-content-between"><span>Total Estimate</span><span>₹{{ booking.estimated_total }}</span></li>
+            </ul>
+
+            <a href="{% url 'tracking' booking.id %}" class="btn btn-gridx"><i class="bi bi-radar me-1"></i> Open Live Radar Map</a>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        {% if booking.invoice %}
+        <div class="gridx-card p-4 mb-3 border border-2 border-warning">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-black text-warning mb-0">INVOICE #INV-{{ booking.invoice.id }}</h5>
+                <span class="badge {% if booking.invoice.payment_status == 'PAID' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                    {{ booking.invoice.payment_status }}
+                </span>
+            </div>
+            <div class="display-6 fw-black text-white mb-2">₹{{ booking.invoice.final_amount }}</div>
+            <div class="small text-secondary mb-3">
+                Provider Payout (90%): ₹{{ booking.invoice.provider_payout }} • Grid Commission (10%): ₹{{ booking.invoice.platform_commission }}
+            </div>
+
+            {% if booking.invoice.payment_status != 'PAID' %}
+                <div class="d-grid gap-2">
+                    <button class="btn btn-gridx" onclick="performBookingAction({{ booking.id }}, 'confirm_payment', {payment_method: 'CASH'})">
+                        <i class="bi bi-cash-coin me-1"></i> Confirm Cash Payment Received
+                    </button>
+                    <button class="btn btn-gridx-outline" onclick="performBookingAction({{ booking.id }}, 'confirm_payment', {payment_method: 'OFFLINE_UPI'})">
+                        <i class="bi bi-qr-code-scan me-1"></i> Record Direct Offline UPI Settlement
+                    </button>
+                </div>
+            {% else %}
+                <div class="alert alert-success py-2 small mb-0">
+                    <i class="bi bi-patch-check-fill me-1"></i> Settled via {{ booking.invoice.payment_method }} on {{ booking.invoice.paid_at|date:"d M Y, H:i" }}
+                </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="gridx-card p-4 mb-3 text-secondary small">
+            <i class="bi bi-receipt fs-3 text-warning d-block mb-2"></i>
+            Final invoice will be generated automatically once the assigned provider marks the service as <b>Completed</b>.
+        </div>
+        {% endif %}
+
+        {% if booking.status == 'completed' and is_owner %}
+        <div class="gridx-card p-4">
+            <h5 class="fw-bold text-warning mb-2"><i class="bi bi-star-fill me-1"></i> Rate Your Service Provider</h5>
+            <div class="mb-2">
+                <label class="small text-secondary">Select Rating</label>
+                <select id="review-rating" class="form-select gridx-input">
+                    <option value="5">★★★★★ (5/5 - Outstanding Fast Response)</option>
+                    <option value="4">★★★★☆ (4/5 - Good Professional Service)</option>
+                    <option value="3">★★★☆☆ (3/5 - Satisfactory)</option>
+                    <option value="2">★★☆☆☆ (2/5 - Delayed)</option>
+                    <option value="1">★☆☆☆☆ (1/5 - Poor)</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="small text-secondary">Review Comment</label>
+                <textarea id="review-comment" class="form-control gridx-input" rows="2" placeholder="How was the mechanic's arrival time and repair quality?">{{ booking.review.comment }}</textarea>
+            </div>
+            <button class="btn btn-gridx w-100"
+                    onclick="performBookingAction({{ booking.id }}, 'submit_review', {rating: document.getElementById('review-rating').value, comment: document.getElementById('review-comment').value})">
+                Submit Verified Review
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

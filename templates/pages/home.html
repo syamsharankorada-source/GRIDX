@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row align-items-center g-4 py-3">
+    <div class="col-lg-7">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background:rgba(255,208,0,0.12); border:1px solid var(--gridx-yellow);">
+            <span class="live-dot"></span>
+            <span class="small fw-bold text-warning">SMART LIVING • REAL-TIME LOCAL DISPATCH NETWORK</span>
+        </div>
+        <h1 class="display-4 fw-black mb-2">ONE GRID. <span style="color:var(--gridx-yellow);">EVERY SOLUTION.</span></h1>
+        <p class="lead text-secondary mb-4">
+            Finding help is easy. Finding the right help quickly is not. GRIDX connects you in real-time with GPS-verified **Roadside Mechanics, Towing, Battery/EV Pros** and **Indoor Home Specialists** across Vijayawada & Guntur.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+            {% if user.is_authenticated %}
+                {% if user.provider_profile %}
+                    <a href="{% url 'provider_dashboard' %}" class="btn btn-gridx btn-lg"><i class="bi bi-speedometer2 me-1"></i> Open Provider Console</a>
+                {% else %}
+                    <a href="{% url 'dashboard' %}" class="btn btn-gridx btn-lg"><i class="bi bi-lightning-charge-fill me-1"></i> Launch Customer Grid</a>
+                {% endif %}
+            {% else %}
+                <a href="{% url 'register' %}?role=customer" class="btn btn-gridx btn-lg"><i class="bi bi-lightning-charge-fill me-1"></i> Request Emergency Help</a>
+                <a href="{% url 'register' %}?role=provider" class="btn btn-gridx-outline btn-lg"><i class="bi bi-tools me-1"></i> Join as Service Provider</a>
+                <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">Demo Login</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="gridx-card-yellow p-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-dark text-warning px-2 py-1">FROM PROBLEM TO SOLUTION</span>
+                <i class="bi bi-broadcast-pin fs-3"></i>
+            </div>
+            <h4 class="fw-black mb-3">REQUEST → MATCH → CONNECT → SOLVE</h4>
+            <div class="row g-2 small fw-bold">
+                <div class="col-6"><div class="p-2 rounded bg-dark text-white"><span class="text-warning">01.</span> SELECT SERVICE</div></div>
+                <div class="col-6"><div class="p-2 rounded bg-dark text-white"><span class="text-warning">02.</span> DESCRIBE ISSUE</div></div>
+                <div class="col-6"><div class="p-2 rounded bg-dark text-white"><span class="text-warning">03.</span> SHARE GPS PIN</div></div>
+                <div class="col-6"><div class="p-2 rounded bg-dark text-white"><span class="text-warning">04.</span> PROS ALERTED</div></div>
+                <div class="col-6"><div class="p-2 rounded bg-dark text-white"><span class="text-warning">05.</span> LIVE TRACKING</div></div>
+                <div class="col-6"><div class="p-2 rounded bg-dark text-white"><span class="text-warning">06.</span> COMPLETE & PAY</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 my-4">
+    <div class="col-md-4">
+        <div class="gridx-card p-3 h-100 border-start border-4 border-warning">
+            <h6 class="fw-bold text-warning mb-1"><i class="bi bi-cpu-fill me-1"></i> Smart Haversine + Skill Dispatch</h6>
+            <p class="small text-secondary mb-0">Matches verified providers by skill compatibility, vehicle type, rating, and live GPS radius with atomic lock protection.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="gridx-card p-3 h-100 border-start border-4 border-warning">
+            <h6 class="fw-bold text-warning mb-1"><i class="bi bi-receipt-cutoff me-1"></i> Transparent Itemized Pricing</h6>
+            <p class="small text-secondary mb-0">Database-driven base fee, per-km distance charge, and emergency surcharges calculated before you book.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="gridx-card p-3 h-100 border-start border-4 border-warning">
+            <h6 class="fw-bold text-warning mb-1"><i class="bi bi-robot me-1"></i> GRIDX AI Diagnostic Copilot</h6>
+            <p class="small text-secondary mb-0">Groq-powered vehicle symptom triage, safety checklists, and context-aware booking status tracking.</p>
+        </div>
+    </div>
+</div>
+
+<h4 class="fw-bold mb-3"><i class="bi bi-grid-1x2-fill text-warning me-2"></i>Explore Indoor & Outdoor Grid Categories</h4>
+{% include 'components/service_cards.html' %}
+{% endblock %}
