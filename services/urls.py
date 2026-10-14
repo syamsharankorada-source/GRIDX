@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('api/map-tiles/<int:z>/<int:x>/<int:y>.png', views.map_tile_proxy, name='map_tile_proxy'),
     path('', views.home_view, name='home'),
     path('dashboard/', views.customer_dashboard_view, name='dashboard'),
     path('provider/', views.provider_dashboard_view, name='provider_dashboard'),

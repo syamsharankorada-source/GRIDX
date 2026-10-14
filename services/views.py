@@ -365,3 +365,19 @@ class AIAssistantAPIView(APIView):
         result = query_gridx_ai(request.user, msg, past_msgs)
         AIMessage.objects.create(conversation=conv, role='assistant', content=result['reply'])
         return Response(result)
+
+
+import requests as http_requests
+from django.http import HttpResponse
+
+def map_tile_proxy(request, z, x, y):
+    url = f"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    try:
+        r = http_requests.get(url, headers={"User-Agent": "GRIDX-Roadside-Assistance-Platform/2.0 (Vijayawada-Guntur)"}, timeout=5)
+        if r.status_code == 200:
+            res = HttpResponse(r.content, content_type="image/png")
+            res["Cache-Control"] = "public, max-age=86400"
+            return res
+    except Exception:
+        pass
+    return HttpResponse(status=404)

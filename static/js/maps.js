@@ -13,28 +13,28 @@ window.createGridXPin = function(bgHex, textHex, borderHex, labelText) {
 };
 
 window.addReliableMapTiles = function(mapInstance) {
-    // Primary: CartoDB Positron/Voyager + Fallback: Esri World Street Map (Never returns 403 OSM volunteer block)
-    const primaryLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '&copy; OpenStreetMap &copy; CARTO'
-    });
-
-    const backupLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    // Primary: Esri World Street Map — 100% Free, No API Key Required, No 403 Block, No Watermarks
+    const esriStreetLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
         attribution: '&copy; Esri &copy; OpenStreetMap'
     });
 
-    let switchedToBackup = false;
-    primaryLayer.on('tileerror', function() {
-        if (!switchedToBackup) {
-            switchedToBackup = true;
-            mapInstance.removeLayer(primaryLayer);
-            backupLayer.addTo(mapInstance);
+    // Backup: Local Django Server Tile Proxy
+    const djangoProxyLayer = L.tileLayer('/api/map-tiles/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    });
+
+    let switched = false;
+    esriStreetLayer.on('tileerror', function() {
+        if (!switched) {
+            switched = true;
+            mapInstance.removeLayer(esriStreetLayer);
+            djangoProxyLayer.addTo(mapInstance);
         }
     });
 
-    primaryLayer.addTo(mapInstance);
+    esriStreetLayer.addTo(mapInstance);
 };
 
 window.initCustomerDashboardMap = function(defaultLat, defaultLng, providersData) {
