@@ -1,12 +1,26 @@
 {% extends 'base.html' %}
 {% block content %}
+<!-- RAPIDO / UBER STYLE FULL-SCREEN LOUD WAKEUP ALARM MODAL FOR MECHANICS -->
+<div id="rapido-alarm-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+    <div class="gridx-card p-4 text-center" style="max-width:460px; width:100%; border:4px solid #FFD000; box-shadow:0 0 60px rgba(255,208,0,0.6);">
+        <div class="badge bg-danger fs-6 fw-black mb-2 px-3 py-2">🚨 NEW EMERGENCY RIDE / REPAIR ALERT!</div>
+        <h3 id="alarm-service-title" class="fw-black text-warning mb-1">Emergency Roadside Help</h3>
+        <p id="alarm-distance-payout" class="fs-5 fw-bold text-white mb-2">2.4 km away • Earn ₹450</p>
+        <div id="alarm-issue-box" class="p-3 rounded mb-3 text-start small" style="background:#080A0F; border:1px solid #FFD000;"></div>
+        <div class="d-flex gap-2">
+            <button id="alarm-accept-btn" class="btn btn-gridx btn-lg flex-grow-1 py-3">✅ ACCEPT JOB NOW</button>
+            <button id="alarm-decline-btn" class="btn btn-outline-danger btn-lg px-4">✖ DECLINE</button>
+        </div>
+    </div>
+</div>
+
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="gridx-card-yellow p-4 h-100 d-flex justify-content-between align-items-center">
             <div>
-                <div class="small text-uppercase fw-black">TODAY'S / TOTAL EARNINGS</div>
+                <div class="small text-uppercase fw-black">YOUR EARNINGS</div>
                 <div class="display-5 fw-black">₹{{ provider.total_earnings }}</div>
-                <div class="small fw-bold">Completed Dispatches: {{ provider.completed_jobs_count }}</div>
+                <div class="small fw-bold">Completed Jobs: {{ provider.completed_jobs_count }}</div>
             </div>
             <i class="bi bi-wallet2 display-4"></i>
         </div>
@@ -15,28 +29,32 @@
         <div class="gridx-card p-4 h-100 d-flex flex-column justify-content-between">
             <div>
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="badge bg-success">VERIFIED PARTNER</span>
+                    <span class="badge bg-success">VERIFIED MECHANIC</span>
                     <span class="text-warning fw-bold">★ {{ provider.rating_avg }}</span>
                 </div>
                 <h5 class="fw-bold mb-1">{{ provider.business_name }}</h5>
-                <p class="small text-secondary mb-2">Supported: {{ provider.supported_vehicles }} • Radius: {{ provider.service_radius_km }} km</p>
+                <p class="small text-secondary mb-2">Rapido-Style Loud Audio Wakeup Alarm Active</p>
             </div>
-            <button class="btn btn-sm {% if provider.is_available %}btn-success{% else %}btn-secondary{% endif %} w-100 fw-bold"
-                    onclick="toggleProviderOnline({{ provider.is_available|yesno:'false,true' }})">
-                <i class="bi bi-power me-1"></i> {% if provider.is_available %}ONLINE — RECEIVING BROADCASTS{% else %}OFFLINE — CLICK TO GO ONLINE{% endif %}
-            </button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-gridx flex-grow-1" onclick="testRapidoWakeupAlarm()">
+                    🔊 Test Loud Ride Alarm
+                </button>
+                <button class="btn btn-sm {% if provider.is_available %}btn-success{% else %}btn-secondary{% endif %}"
+                        onclick="toggleProviderOnline({{ provider.is_available|yesno:'false,true' }})">
+                    {% if provider.is_available %}ONLINE{% else %}OFFLINE{% endif %}
+                </button>
+            </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="gridx-card p-4 h-100 d-flex flex-column justify-content-between">
             <div>
-                <h6 class="fw-bold text-warning mb-1"><i class="bi bi-geo-alt-fill"></i> Live Telemetry Position</h6>
-                <p class="small text-secondary mb-2">GPS: {{ provider.current_lat }}, {{ provider.current_lng }}</p>
+                <h6 class="fw-bold text-warning mb-1"><i class="bi bi-robot"></i> AI Technical Repair Helper</h6>
+                <p class="small text-secondary mb-2">Need wiring diagrams, starter relay checks, or safety steps?</p>
             </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-gridx-outline flex-grow-1" onclick="pushProviderGPS()"><i class="bi bi-crosshair"></i> Sync Browser GPS</button>
-                <button class="btn btn-sm btn-gridx flex-grow-1" onclick="window.location.reload()"><i class="bi bi-arrow-clockwise"></i> Refresh Grid</button>
-            </div>
+            <button class="btn btn-sm btn-gridx-outline w-100" onclick="toggleAIDrawer(); sendQuickPrompt('Give me mechanic technical diagnostic steps for a no-crank vehicle.')">
+                Open AI Mechanic Repair Guide
+            </button>
         </div>
     </div>
 </div>
@@ -45,83 +63,181 @@
     <div class="col-lg-6">
         <div class="gridx-card p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold text-warning mb-0"><i class="bi bi-broadcast-pin me-1"></i> Incoming Nearby Requests</h5>
-                <span class="badge bg-dark border border-warning text-warning">{{ incoming_requests|length }} Active</span>
+                <h5 class="fw-bold text-warning mb-0"><i class="bi bi-bell-fill me-1"></i> Incoming Customer Requests</h5>
+                <span class="badge bg-warning text-dark fw-black">{{ incoming_requests|length }} Waiting</span>
             </div>
 
             {% for item in incoming_requests %}
             <div class="p-3 rounded-3 mb-3" style="background:#0B0E15; border:2px solid var(--gridx-yellow);">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="badge bg-warning text-dark fw-black">
-                        {% if item.booking.is_emergency %}⚡ HIGH URGENCY{% else %}STANDARD{% endif %}
-                    </span>
-                    <span class="small text-warning fw-bold">
-                        DISTANCE: {{ item.distance_km }} km (~{{ item.eta_mins }} min) • EST. PRICE: {{ item.price_range }}
-                    </span>
+                    <span class="badge bg-danger fw-black">🚨 URGENT REQUEST</span>
+                    <span class="small text-warning fw-bold">{{ item.distance_km }} km away (~{{ item.eta_mins }} mins) • Earn {{ item.price_range }}</span>
                 </div>
                 <h5 class="fw-bold mb-1">#{{ item.booking.id }} — {{ item.booking.category.name }}</h5>
                 <p class="text-white mb-1">"{{ item.booking.issue_description }}"</p>
-                <p class="small text-secondary mb-3">
-                    <i class="bi bi-geo-alt text-warning"></i> {{ item.booking.customer_address }}
-                    {% if item.booking.vehicle %} • <i class="bi bi-car-front text-warning ms-1"></i> {{ item.booking.vehicle.make_model }}{% endif %}
-                </p>
+                <p class="small text-secondary mb-3"><i class="bi bi-geo-alt text-warning"></i> {{ item.booking.customer_address }}</p>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-gridx flex-grow-1" onclick="performBookingAction({{ item.booking.id }}, 'accept')">
-                        <i class="bi bi-check2-circle me-1"></i> ACCEPT & NAVIGATE
+                    <button class="btn btn-gridx flex-grow-1" onclick="stopAlarmSound(); performBookingAction({{ item.booking.id }}, 'accept')">
+                        ✅ ACCEPT & START GOING
                     </button>
-                    <button class="btn btn-outline-secondary px-3" onclick="performBookingAction({{ item.booking.id }}, 'reject')">
+                    <button class="btn btn-outline-secondary px-3" onclick="stopAlarmSound(); performBookingAction({{ item.booking.id }}, 'reject')">
                         DECLINE
                     </button>
                 </div>
             </div>
             {% empty %}
             <div class="text-center py-4 text-secondary">
-                <i class="bi bi-radar fs-1 d-block mb-2 text-warning"></i>
-                No unassigned requests in your {{ provider.service_radius_km }} km radius right now.
+                No waiting requests right now. Keep this page open — a loud alarm will ring as soon as a customer books!
             </div>
             {% endfor %}
         </div>
     </div>
 
     <div class="col-lg-6">
-        <div class="gridx-card p-4">
-            <h5 class="fw-bold mb-3"><i class="bi bi-tools text-warning me-1"></i> Active & Assigned Dispatches</h5>
+        <div class="gridx-card p-4 mb-3">
+            <h5 class="fw-bold mb-3"><i class="bi bi-tools text-warning me-1"></i> Your Accepted Jobs</h5>
             {% for job in assigned_bookings %}
-            <div class="p-3 rounded-3 mb-3 border {% if job.status != 'completed' %}border-warning{% else %}border-secondary{% endif %}" style="background:#0B0E15;">
+            <div class="p-3 rounded-3 mb-3 border border-warning" style="background:#0B0E15;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <strong>#{{ job.id }} — {{ job.category.name }}</strong>
-                    <span class="badge {% if job.status == 'completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ job.get_status_display }}</span>
+                    <span class="badge bg-warning text-dark">{{ job.get_status_display }}</span>
                 </div>
-                <p class="small text-secondary mb-2">{{ job.customer_address }} • Customer: {{ job.customer.username }} • Est: <strong class="text-warning">₹{{ job.estimated_total }}</strong></p>
-
+                <p class="small text-secondary mb-2">{{ job.customer_address }} • Customer: {{ job.customer.username }} • Bill: <strong class="text-warning">₹{{ job.estimated_total }}</strong></p>
                 <div class="d-flex flex-wrap gap-2 mt-2">
                     {% if job.status == 'accepted' %}
-                        <button class="btn btn-sm btn-gridx" onclick="performBookingAction({{ job.id }}, 'en_route')">1. Mark En Route</button>
+                        <button class="btn btn-sm btn-gridx" onclick="performBookingAction({{ job.id }}, 'en_route')">1. Start Going</button>
                     {% elif job.status == 'en_route' %}
-                        <button class="btn btn-sm btn-gridx" onclick="performBookingAction({{ job.id }}, 'arrived')">2. Mark Arrived</button>
+                        <button class="btn btn-sm btn-gridx" onclick="performBookingAction({{ job.id }}, 'arrived')">2. Reached Spot</button>
                     {% elif job.status == 'arrived' %}
-                        <button class="btn btn-sm btn-gridx" onclick="performBookingAction({{ job.id }}, 'in_progress')">3. Start Service</button>
+                        <button class="btn btn-sm btn-gridx" onclick="performBookingAction({{ job.id }}, 'in_progress')">3. Start Repair</button>
                     {% elif job.status == 'in_progress' %}
-                        <button class="btn btn-sm btn-success fw-bold" onclick="performBookingAction({{ job.id }}, 'completed')">4. Complete & Issue Invoice</button>
+                        <button class="btn btn-sm btn-success fw-bold" onclick="performBookingAction({{ job.id }}, 'completed')">4. Work Done & Bill</button>
                     {% endif %}
-                    {% if job.status in 'accepted,en_route' %}
-                        <button class="btn btn-sm btn-gridx-outline" onclick="performBookingAction({{ job.id }}, 'simulate_step')">
-                            <i class="bi bi-cursor-fill"></i> Simulate Drive Step
-                        </button>
-                    {% endif %}
-                    <a href="{% url 'tracking' job.id %}" class="btn btn-sm btn-outline-light">Live Radar</a>
-                    <a href="{% url 'booking_detail' job.id %}" class="btn btn-sm btn-outline-warning">Invoice</a>
+                    <a href="{% url 'tracking' job.id %}" class="btn btn-sm btn-outline-light">Open Map</a>
                 </div>
             </div>
             {% empty %}
-            <p class="text-secondary small mb-0">Accept an incoming broadcast request on the left to start navigating.</p>
+            <p class="text-secondary small mb-0">No active jobs yet.</p>
             {% endfor %}
+        </div>
+
+        <!-- MECHANIC ISSUE / CUSTOMER REPORT CARD -->
+        <div class="gridx-card p-3 border border-danger">
+            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-flag-fill me-1"></i> Report Issue with a Customer</h6>
+            <div class="mb-2">
+                <select id="mech-dispute-type" class="form-select form-select-sm">
+                    <option value="FAKE_REQUEST">Customer Not Answering / Fake Location</option>
+                    <option value="BEHAVIOR">Rude Behavior / Refused Fair Payment</option>
+                    <option value="SAFETY">Unsafe Highway / Night Spot</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <input id="mech-dispute-desc" type="text" class="form-control form-control-sm" placeholder="Write customer issue...">
+                <button type="button" class="btn btn-sm btn-danger fw-bold" onclick="submitProviderDispute()">Report</button>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 <script>
+let alarmAudioCtx = null;
+let alarmBeepTimer = null;
+let lastAlertedBookingId = null;
+
+function playRapidoSirenLoop() {
+    try {
+        if (!alarmAudioCtx) alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (alarmBeepTimer) clearInterval(alarmBeepTimer);
+
+        const triggerBeep = () => {
+            const osc = alarmAudioCtx.createOscillator();
+            const gain = alarmAudioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, alarmAudioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1320, alarmAudioCtx.currentTime + 0.22);
+            gain.gain.setValueAtTime(0.25, alarmAudioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, alarmAudioCtx.currentTime + 0.35);
+            osc.connect(gain);
+            gain.connect(alarmAudioCtx.destination);
+            osc.start();
+            osc.stop(alarmAudioCtx.currentTime + 0.36);
+        };
+        triggerBeep();
+        alarmBeepTimer = setInterval(triggerBeep, 550);
+    } catch (e) {}
+}
+
+function stopAlarmSound() {
+    if (alarmBeepTimer) {
+        clearInterval(alarmBeepTimer);
+        alarmBeepTimer = null;
+    }
+    document.getElementById('rapido-alarm-modal').style.display = 'none';
+}
+
+function showRapidoAlarmModal(alertObj) {
+    document.getElementById('alarm-service-title').textContent = `#${alertObj.booking_id} — ${alertObj.category}`;
+    document.getElementById('alarm-distance-payout').textContent = `${alertObj.distance_km} km away • Est. ₹${alertObj.estimated_payout}`;
+    document.getElementById('alarm-issue-box').innerHTML = `
+        <div><b>Customer:</b> ${alertObj.customer}</div>
+        <div><b>Problem:</b> "${alertObj.issue}"</div>
+        <div><b>Location:</b> ${alertObj.address}</div>
+    `;
+    document.getElementById('alarm-accept-btn').onclick = () => {
+        stopAlarmSound();
+        performBookingAction(alertObj.booking_id, 'accept');
+    };
+    document.getElementById('alarm-decline-btn').onclick = () => {
+        stopAlarmSound();
+        performBookingAction(alertObj.booking_id, 'reject');
+    };
+    document.getElementById('rapido-alarm-modal').style.display = 'flex';
+    playRapidoSirenLoop();
+}
+
+function testRapidoWakeupAlarm() {
+    showRapidoAlarmModal({
+        booking_id: {{ incoming_requests.0.booking.id|default:"101" }},
+        category: "Emergency Roadside Breakdown",
+        customer: "Stranded Highway User",
+        issue: "Vehicle stopped suddenly on highway, need urgent mechanic!",
+        address: "NH-16 Highway Pillar 42",
+        distance_km: 2.1,
+        estimated_payout: "520.00"
+    });
+}
+
+async function pollIncomingMechanicAlarms() {
+    try {
+        const res = await fetch('/api/provider/incoming-alarm/');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.alerts && data.alerts.length > 0) {
+            const newest = data.alerts[0];
+            if (lastAlertedBookingId !== newest.booking_id) {
+                lastAlertedBookingId = newest.booking_id;
+                showRapidoAlarmModal(newest);
+            }
+        }
+    } catch (e) {}
+}
+
+async function submitProviderDispute() {
+    const issue_type = document.getElementById('mech-dispute-type').value;
+    const description = document.getElementById('mech-dispute-desc').value;
+    const res = await fetch('/api/disputes/report/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+        body: JSON.stringify({ issue_type, description })
+    });
+    const d = await res.json();
+    if (!res.ok) return showToast(d.error || 'Enter details', 'danger');
+    document.getElementById('mech-dispute-desc').value = '';
+    showToast(d.message, 'warning');
+}
+
 async function toggleProviderOnline(state) {
     await fetch('/api/provider/status/', {
         method: 'POST',
@@ -130,17 +246,7 @@ async function toggleProviderOnline(state) {
     });
     window.location.reload();
 }
-function pushProviderGPS() {
-    if (!navigator.geolocation) return showToast('Geolocation unsupported', 'warning');
-    navigator.geolocation.getCurrentPosition(async pos => {
-        await fetch('/api/provider/status/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
-            body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        });
-        showToast('Live GPS position updated!');
-        setTimeout(() => window.location.reload(), 700);
-    }, () => showToast('GPS permission denied.', 'warning'));
-}
+
+setInterval(pollIncomingMechanicAlarms, 5000);
 </script>
 {% endblock %}

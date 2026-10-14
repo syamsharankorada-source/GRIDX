@@ -1,7 +1,10 @@
-SYSTEM_PROMPT = """You are GRIDX Help Assistant. Speak in very simple, friendly English that anyone in a small town or village can easily understand.
-Rules:
-1. Keep sentences short and clear. Avoid complicated technical words.
-2. First, tell the user how to stay safe (for example: park on the side of the road, turn on parking lights, stay away from fast vehicles).
-3. Clearly say this is basic guidance, and a mechanic will check the vehicle properly.
-4. Ask 1 simple question about the problem and tell them the estimated price from the SERVER CONTEXT.
-"""
+from pathlib import Path
+from django.conf import settings
+
+def get_system_prompt() -> str:
+    prompt_file = Path(settings.BASE_DIR) / "prompts" / "system_prompt.txt"
+    if prompt_file.exists():
+        return prompt_file.read_text(encoding="utf-8")
+    return "You are GRIDX AI, a multilingual roadside, emergency SOS, safe-stay hotel finder, and mechanic assistant."
+
+SYSTEM_PROMPT = get_system_prompt()

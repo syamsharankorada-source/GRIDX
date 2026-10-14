@@ -8,12 +8,14 @@ class ServiceCategory(models.Model):
     DOMAIN_CHOICES = [
         ('OUTDOOR', 'Outdoor / Roadside'),
         ('INDOOR', 'Indoor / Home Service'),
+        ('EMERGENCY', 'Highway SOS / Emergency'),
     ]
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=100)
     domain = models.CharField(max_length=15, choices=DOMAIN_CHOICES, default='OUTDOOR')
     icon = models.CharField(max_length=50, default='bi-tools')
     description = models.TextField(blank=True)
+    estimated_repair_hours = models.FloatField(default=1.0, help_text="If >= 2.0 hours, AI suggests nearby hotels/rooms")
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -58,12 +60,13 @@ class Booking(models.Model):
     category = models.ForeignKey(ServiceCategory, on_delete=models.PROTECT)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='requested', db_index=True)
     is_emergency = models.BooleanField(default=True)
+    estimated_repair_hours = models.FloatField(default=1.0)
     issue_description = models.TextField()
     issue_photo = models.ImageField(upload_to='booking_photos/', null=True, blank=True)
-    customer_address = models.CharField(max_length=255, default="Benz Circle, NH-16, Vijayawada")
+    customer_address = models.CharField(max_length=255, default="NH-16 Highway Corridor")
     customer_lat = models.FloatField()
     customer_lng = models.FloatField()
-    search_radius_km = models.FloatField(default=15.0)
+    search_radius_km = models.FloatField(default=25.0)
     distance_km = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal('3.40'))
     estimated_base = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     estimated_distance_cost = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
@@ -123,6 +126,48 @@ class Review(models.Model):
     rating = models.PositiveSmallIntegerField(default=5)
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+class DisputeReport(models.Model):
+    REPORTER_ROLES = [('CUSTOMER', 'Customer'), ('PROVIDER', 'Mechanic / Provider')]
+    ISSUE_TYPES = [
+        ('OVERCHARGE', 'Unfair Pricing / Overcharging'),
+        ('DELAY', 'Severe Delay / No Show'),
+        ('BEHAVIOR', 'Unprofessional Behavior'),
+        ('SAFETY', 'Safety or Location Issue'),
+        ('QUALITY', 'Poor Repair Quality'),
+        ('FAKE_REQUEST', 'Fake Customer Request / Unreachable'),
+    ]
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='disputes', null=True, blank=True)
+    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='filed_disputes')
+    reporter_role = models.CharField(max_length=15, choices=REPORTER_ROLES, default='CUSTOMER')
+    issue_type = models.CharField(max_length=25, choices=ISSUE_TYPES, default='DELAY')
+    description = models.TextField()
+    status = models.CharField(max_length=20, default='OPEN_INVESTIGATION')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+class EmergencySOSLog(models.Model):
+    EMERGENCY_TYPES = [
+        ('ACCIDENT', 'Road Accident & Ambulance (108 / 112)'),
+        ('FIRE', 'Vehicle / Highway Fire (101)'),
+        ('TOLL_CRANE', 'NHAI Toll Plaza Recovery & Crane (1033)'),
+        ('MEDICAL', 'Medical Emergency & Nearby Hospital'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sos_logs')
+    emergency_type = models.CharField(max_length=20, choices=EMERGENCY_TYPES, default='ACCIDENT')
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    address = models.CharField(max_length=255, blank=True)
+    nearest_hospital = models.CharField(max_length=200, blank=True)
+    nearest_toll_plaza = models.CharField(max_length=200, blank=True)
+    govt_sms_payload = models.TextField()
+    sms_status = models.CharField(max_length=40, default='DISPATCHED_TO_108_112_1033')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
 class Notification(models.Model):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')

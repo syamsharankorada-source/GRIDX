@@ -1,19 +1,39 @@
 {% extends 'base.html' %}
 {% block content %}
+<!-- EMERGENCY HIGHWAY SOS BANNER (1-CLICK ACCIDENT / FIRE / AMBULANCE / TOLL PLAZA) -->
+<div class="p-3 rounded-3 mb-3 d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2"
+     style="background:linear-gradient(90deg, #4A0D0D 0%, #1F0808 100%); border:2px solid #FF3B30;">
+    <div>
+        <span class="badge bg-danger fw-black me-2">HIGHWAY SOS • 108 / 112 / 1033</span>
+        <strong class="text-white">Road Accident, Fire, or Medical Emergency?</strong>
+        <div class="small text-light">Instantly alerts <b>108 Ambulance</b>, <b>1033 NHAI Toll Plaza Crane</b>, <b>101 Fire</b> & pins nearby <b>Hospitals</b> with Government SMS.</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-danger fw-black px-3" onclick="triggerHighwaySOS('ACCIDENT')">
+            🚑 Accident & 108 Ambulance SOS
+        </button>
+        <button type="button" class="btn btn-sm btn-warning text-dark fw-black" onclick="triggerHighwaySOS('FIRE')">
+            🔥 Fire & 1033 Toll Crane SOS
+        </button>
+    </div>
+</div>
+
+<div id="sos-live-banner" class="alert alert-danger border-2 border-light mb-4" style="display:none; background:#630808; color:#FFF;"></div>
+
 {% if active_booking %}
 <div class="gridx-card-yellow p-3 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
     <div class="d-flex align-items-center gap-3">
         <div class="p-2 bg-dark text-warning rounded-3"><i class="bi bi-truck-front-fill fs-4"></i></div>
         <div>
-            <div class="small text-uppercase fw-black">YOUR CURRENT BOOKING (#{{ active_booking.id }})</div>
+            <div class="small text-uppercase fw-black">YOUR ACTIVE BOOKING (#{{ active_booking.id }})</div>
             <div class="fw-bold">{{ active_booking.category.name }} — Status: <span class="badge bg-dark text-warning">{{ active_booking.get_status_display }}</span>
                 {% if active_booking.provider %}• Mechanic: <u>{{ active_booking.provider.business_name }}</u>{% endif %}
             </div>
         </div>
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'tracking' active_booking.id %}" class="btn btn-dark btn-sm fw-bold px-3"><i class="bi bi-geo-alt-fill me-1"></i> See Mechanic on Map</a>
-        <a href="{% url 'booking_detail' active_booking.id %}" class="btn btn-outline-dark btn-sm fw-bold">View Bill</a>
+        <a href="{% url 'tracking' active_booking.id %}" class="btn btn-dark btn-sm fw-bold px-3"><i class="bi bi-geo-alt-fill me-1"></i> Live Mechanic Map</a>
+        <a href="{% url 'booking_detail' active_booking.id %}" class="btn btn-outline-dark btn-sm fw-bold">Bill / Report Issue</a>
     </div>
 </div>
 {% endif %}
@@ -21,48 +41,63 @@
 <div class="row g-4" id="booking-section">
     <div class="col-lg-7">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
-            <h5 class="fw-bold mb-0"><span class="text-warning">Step 1:</span> What Help Do You Need?</h5>
-            <div class="d-flex gap-1">
-                <button type="button" class="btn btn-sm btn-gridx-outline" onclick="setQuickCityPreset(16.5062, 80.6480, 'Benz Circle, Vijayawada')">Vijayawada</button>
-                <button type="button" class="btn btn-sm btn-gridx-outline" onclick="setQuickCityPreset(16.3067, 80.4365, 'Arundelpet, Guntur')">Guntur</button>
-                <button type="button" class="btn btn-sm btn-gridx" onclick="detectBrowserGeolocation()"><i class="bi bi-crosshair"></i> Use My Current GPS</button>
-            </div>
+            <h5 class="fw-bold mb-0"><span class="text-warning">Step 1:</span> Select What Help You Need</h5>
+            <button type="button" class="btn btn-sm btn-gridx" onclick="detectBrowserGeolocation()">
+                <i class="bi bi-crosshair"></i> Use My Live GPS
+            </button>
         </div>
 
         {% include 'components/service_cards.html' %}
 
+        <!-- WORLDWIDE MAP + CITY SEARCH BAR -->
         <div class="gridx-card p-3 mt-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="fw-bold mb-0"><i class="bi bi-geo-alt-fill text-warning me-1"></i> Your Location Map (Touch or Drag Yellow Pin)</h6>
-                <span class="badge bg-warning text-dark fw-black">{{ providers|length }} Mechanics Available</span>
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                <h6 class="fw-bold mb-0"><i class="bi bi-globe-central-south-asia text-warning me-1"></i> Worldwide Mechanic, Hospital & Hotel Map</h6>
+                <span id="mechanics-count-badge" class="badge bg-warning text-dark fw-black">12 Trusted Mechanic Shops Nearby</span>
             </div>
+
+            <form onsubmit="searchWorldLocation(event)" class="d-flex gap-2 mb-2">
+                <input id="world-search-input" type="text" class="form-control form-control-sm gridx-input" placeholder="Search ANY village, city, highway or country (e.g. Hyderabad, Mumbai, Dubai, London, NH-16)...">
+                <button type="submit" class="btn btn-sm btn-gridx px-3">Search World</button>
+            </form>
+
+            <div class="d-flex flex-wrap gap-1 mb-2">
+                <small class="text-secondary me-1 align-self-center">Quick Jump:</small>
+                <button type="button" class="btn btn-sm btn-gridx-outline py-0 px-2" style="font-size:0.72rem;" onclick="setQuickCityPreset(16.5062, 80.6480, 'Vijayawada NH-16, India')">Vijayawada</button>
+                <button type="button" class="btn btn-sm btn-gridx-outline py-0 px-2" style="font-size:0.72rem;" onclick="setQuickCityPreset(16.3067, 80.4365, 'Guntur, India')">Guntur</button>
+                <button type="button" class="btn btn-sm btn-gridx-outline py-0 px-2" style="font-size:0.72rem;" onclick="setQuickCityPreset(17.3850, 78.4867, 'Hyderabad, India')">Hyderabad</button>
+                <button type="button" class="btn btn-sm btn-gridx-outline py-0 px-2" style="font-size:0.72rem;" onclick="setQuickCityPreset(25.2048, 55.2708, 'Dubai Sheikh Zayed Rd, UAE')">Dubai</button>
+                <button type="button" class="btn btn-sm btn-gridx-outline py-0 px-2" style="font-size:0.72rem;" onclick="setQuickCityPreset(51.5074, -0.1278, 'London, UK')">London</button>
+                <button type="button" class="btn btn-sm btn-gridx-outline py-0 px-2" style="font-size:0.72rem;" onclick="setQuickCityPreset(40.7128, -74.0060, 'New York, USA')">New York</button>
+            </div>
+
             <div class="map-wrapper">
                 <div id="dashboard-map" class="map-container"></div>
             </div>
         </div>
 
-        <div class="gridx-card p-3 mt-3">
-            <h6 class="fw-bold text-warning mb-2"><i class="bi bi-person-check-fill me-1"></i> Nearby Verified Mechanics Ready to Help</h6>
-            <div class="row g-2">
-                {% for p in providers %}
-                <div class="col-md-4">
-                    <div class="p-2 rounded border border-secondary" style="background:#0B0E14;">
-                        <div class="fw-bold small text-white text-truncate">{{ p.business_name }}</div>
-                        <div class="d-flex justify-content-between small text-secondary mt-1">
-                            <span class="text-warning fw-bold">★ {{ p.rating_avg }}</span>
-                            <span>{{ p.dist_km }} km away (~{{ p.eta_mins }} mins)</span>
-                        </div>
-                    </div>
+        <!-- AI SAFE-STAY HOTELS & ROOMS SUGGESTION BOX (WHEN REPAIR TAKES LONG TIME FAR FROM HOME) -->
+        <div class="gridx-card p-3 mt-3 border border-success">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <span class="badge bg-success mb-1">🏨 AI SAFE-STAY & REST STOP FINDER</span>
+                    <h6 class="fw-bold text-white mb-0">Repair Taking Long Time Far From Home? Nearby Hotels & Rooms:</h6>
                 </div>
-                {% endfor %}
             </div>
+            <div id="safe-stay-hotels-list" class="row g-2"></div>
+        </div>
+
+        <!-- ALL NEARBY TRUSTED MECHANIC SHOPS (12+ SHOPS) -->
+        <div class="gridx-card p-3 mt-3">
+            <h6 class="fw-bold text-warning mb-2"><i class="bi bi-shop me-1"></i> All Trusted Mechanic Shops & Garages in Selected Area</h6>
+            <div id="global-mechanics-list" class="row g-2"></div>
         </div>
     </div>
 
     <div class="col-lg-5">
         <div class="gridx-card p-4 border-top border-3 border-warning">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold mb-0"><span class="text-warning">Step 2:</span> Confirm & Book</h5>
+                <h5 class="fw-bold mb-0"><span class="text-warning">Step 2:</span> Book Mechanic</h5>
                 <span id="selected-cat-badge" class="badge badge-domain-outdoor">{{ categories.0.name }}</span>
             </div>
 
@@ -81,109 +116,81 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label small fw-bold text-secondary">Your Place / Nearby Landmark</label>
+                    <label class="form-label small fw-bold text-secondary">Your Current Location / Landmark</label>
                     <input type="text" id="customer_address" class="form-control gridx-input" value="Benz Circle, NH-16, Vijayawada" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label small fw-bold text-secondary">Tell Us What Happened (In Simple Words)</label>
-                    <textarea id="issue_description" class="form-control gridx-input" rows="2" placeholder="Example: Bike stopped suddenly, tyre puncture, or battery not starting..." required></textarea>
+                    <label class="form-label small fw-bold text-secondary">Describe Problem (Simple Words)</label>
+                    <textarea id="issue_description" class="form-control gridx-input" rows="2" placeholder="Example: Bike stopped, tyre puncture, or major engine issue..." required></textarea>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label small text-secondary">Upload Photo of Problem (Optional)</label>
+                    <label class="form-label small text-secondary">Upload Photo (Optional)</label>
                     <input type="file" id="issue_photo" class="form-control form-control-sm" accept="image/*">
                 </div>
 
                 <div class="form-check form-switch mb-3 p-2 rounded ps-5" style="background:rgba(255,208,0,0.08); border:1px solid var(--border-grid);">
                     <input class="form-check-input" type="checkbox" id="is_emergency" checked onchange="refreshPriceEstimate()">
                     <label class="form-check-label small fw-bold text-warning" for="is_emergency">
-                        Need Urgent Help Right Now
+                        Urgent Emergency (Rings Loud Alarm on Nearby Mechanics' Phones)
                     </label>
                 </div>
 
                 <div class="p-3 rounded mb-3" style="background:#080A0F; border:1px solid var(--border-grid);">
-                    <div class="small fw-bold text-uppercase text-warning mb-2"><i class="bi bi-currency-rupee"></i> Estimated Bill (Pay After Work)</div>
+                    <div class="small fw-bold text-uppercase text-warning mb-2"><i class="bi bi-currency-rupee"></i> Estimated Bill</div>
                     <div id="estimate-breakdown">Calculating...</div>
                 </div>
 
                 <button type="submit" id="submit-booking-btn" class="btn btn-gridx w-100 py-2 fs-6">
-                    <i class="bi bi-telephone-outbound-fill me-1"></i> BOOK MECHANIC NOW
+                    <i class="bi bi-bell-fill me-1"></i> BOOK & RING NEARBY MECHANIC
                 </button>
             </form>
         </div>
 
-        <div class="gridx-card p-3 mt-3">
-            <h6 class="fw-bold mb-2"><i class="bi bi-plus-circle text-warning me-1"></i> Add Another Bike, Car or Home</h6>
-            <form method="post" action="{% url 'add_vehicle' %}" class="row g-2 mb-2">
-                {% csrf_token %}
-                <div class="col-4">
-                    <select name="vehicle_type" class="form-select form-select-sm">
-                        <option value="BIKE">Bike</option>
-                        <option value="CAR">Car</option>
-                        <option value="SUV">SUV</option>
-                        <option value="EV">Electric</option>
-                        <option value="HOME">Home</option>
-                    </select>
-                </div>
-                <div class="col-4"><input type="text" name="make_model" class="form-control form-control-sm" placeholder="Vehicle Name" required></div>
-                <div class="col-4"><input type="text" name="registration_number" class="form-control form-control-sm" placeholder="Number Plate" required></div>
-                <div class="col-12"><button class="btn btn-sm btn-gridx-outline w-100">+ Save Vehicle</button></div>
-            </form>
+        <!-- REPORT ISSUE / COMPLAINT CARD -->
+        <div class="gridx-card p-3 mt-3 border border-danger">
+            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-flag-fill me-1"></i> Faced an Issue with a Mechanic? Report Here</h6>
+            <div class="mb-2">
+                <select id="cust-dispute-type" class="form-select form-select-sm">
+                    <option value="OVERCHARGE">Asked Extra Money / Overcharging</option>
+                    <option value="DELAY">Mechanic Taking Too Long / Not Coming</option>
+                    <option value="BEHAVIOR">Rude Behavior</option>
+                    <option value="QUALITY">Problem Not Fixed Properly</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <input id="cust-dispute-desc" type="text" class="form-control form-control-sm" placeholder="Write what happened...">
+                <button type="button" class="btn btn-sm btn-danger fw-bold" onclick="submitDisputeReport('cust-dispute-type', 'cust-dispute-desc')">Report</button>
+            </div>
         </div>
-    </div>
-</div>
-
-<div class="gridx-card p-4 mt-4">
-    <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-warning me-2"></i>Your Past Bookings</h5>
-    <div class="table-responsive">
-        <table class="table table-dark table-hover align-middle mb-0">
-            <thead>
-                <tr class="text-secondary small">
-                    <th>Booking No</th><th>Service</th><th>Vehicle</th><th>Mechanic</th><th>Status</th><th>Estimated Cost</th><th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for b in bookings %}
-                <tr>
-                    <td class="fw-bold">#{{ b.id }}</td>
-                    <td>{{ b.category.name }}</td>
-                    <td class="small text-secondary">{{ b.vehicle.make_model|default:"Vehicle" }}</td>
-                    <td>{{ b.provider.business_name|default:"Finding Mechanic..." }}</td>
-                    <td><span class="badge bg-warning text-dark">{{ b.get_status_display }}</span></td>
-                    <td class="text-warning fw-bold">₹{{ b.estimated_total }}</td>
-                    <td>
-                        <a href="{% url 'tracking' b.id %}" class="btn btn-sm btn-gridx py-1">Track on Map</a>
-                        <a href="{% url 'booking_detail' b.id %}" class="btn btn-sm btn-outline-light py-1">View Bill</a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="7" class="text-center text-secondary py-3">You have not booked any service yet.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-window.addEventListener('load', function() {
-    const providers = [
-        {% for p in providers %}
-            { lat: {{ p.current_lat }}, lng: {{ p.current_lng }}, name: "{{ p.business_name|escapejs }}", rating: "{{ p.rating_avg }}" },
-        {% endfor %}
-    ];
-    window.initCustomerDashboardMap(16.5062, 80.6480, providers);
+async function submitDisputeReport(typeId, descId, bookingId = null) {
+    const issue_type = document.getElementById(typeId).value;
+    const description = document.getElementById(descId).value;
+    const res = await fetch('/api/disputes/report/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+        body: JSON.stringify({ booking_id: bookingId, issue_type, description })
+    });
+    const d = await res.json();
+    if (!res.ok) return showToast(d.error || 'Please write details', 'danger');
+    document.getElementById(descId).value = '';
+    showToast(d.message, 'warning');
+}
 
+window.addEventListener('load', function() {
+    window.initCustomerDashboardMap(16.5062, 80.6480);
     const params = new URLSearchParams(window.location.search);
-    const slug = params.get('cat');
-    if (slug) {
-        const col = document.querySelector(`.service-cat-col[data-slug="${slug}"] .service-cat-card`);
-        if (col) col.click();
-    } else {
-        refreshPriceEstimate();
+    if (params.get('sos') === '1') {
+        triggerHighwaySOS('ACCIDENT');
     }
+    refreshPriceEstimate();
 });
 </script>
 {% endblock %}
