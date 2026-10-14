@@ -70,7 +70,7 @@ h1, h2, h3, h4, .brand-logo { font-family: 'Space Grotesk', 'Inter', sans-serif;
 
 /* Crisp White & High-Contrast Black Road Filter for Map Tiles */
 .leaflet-tile-pane {
-    filter: grayscale(100%) contrast(125%) brightness(104%);
+    filter: none;
 }
 
 /* Black & Yellow Styled Map Popups & Controls */
@@ -133,3 +133,86 @@ h1, h2, h3, h4, .brand-logo { font-family: 'Space Grotesk', 'Inter', sans-serif;
 .msg-bubble { padding: 10px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 0.88rem; }
 .msg-user { background: var(--gridx-yellow); color: #07080B; font-weight: 700; margin-left: 40px; }
 .msg-assistant { background: var(--bg-surface-elevated); color: var(--text-primary); border: 1px solid var(--border-subtle); margin-right: 20px; }
+
+
+/* === UBER-STYLE LIVE MAP ANIMATIONS === */
+.leaflet-tile-pane {
+    filter: none !important;
+}
+
+@keyframes radar-ring {
+    0% { transform: scale(0.4); opacity: 0.95; }
+    100% { transform: scale(2.8); opacity: 0; }
+}
+
+.gps-pulse-wrap {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gps-pulse-ring {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 208, 0, 0.45);
+    border: 2px solid #FFD000;
+    animation: radar-ring 2s cubic-bezier(0.2, 0.8, 0.4, 1) infinite;
+}
+
+.gps-pin-core {
+    position: relative;
+    z-index: 2;
+    background: #FFD000;
+    color: #07080B;
+    border: 3px solid #07080B;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 900;
+    font-size: 11px;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.mechanic-live-marker {
+    transition: transform 0.15s linear;
+}
+
+.mechanic-badge {
+    background: #07080B;
+    color: #FFD000;
+    border: 2.5px solid #FFD000;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 900;
+    font-size: 11px;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.65);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+@keyframes route-flow {
+    to { stroke-dashoffset: -36; }
+}
+
+.animated-route-line {
+    animation: route-flow 1s linear infinite;
+}
+
+.map-Layer-switcher {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    z-index: 600;
+    display: flex;
+    gap: 6px;
+}

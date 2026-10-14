@@ -6,12 +6,12 @@
         <h4 class="fw-black d-inline mb-0">{{ booking.category.name }}</h4>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        {% if booking.provider and booking.status in 'accepted,en_route' %}
-            <button class="btn btn-sm btn-gridx" onclick="performBookingAction({{ booking.id }}, 'simulate_step')">
-                <i class="bi bi-truck-front-fill me-1"></i> Move Mechanic Closer (Demo)
-            </button>
-        {% endif %}
-        <button class="btn btn-sm btn-gridx-outline" onclick="recenterRadar()"><i class="bi bi-arrows-fullscreen"></i> Center Map</button>
+        <button id="live-drive-btn" class="btn btn-sm btn-gridx" onclick="startSmoothRoadDriveDemo()">
+            <i class="bi bi-play-circle-fill me-1"></i> Start Live Mechanic Drive
+        </button>
+        <button class="btn btn-sm btn-gridx-outline" onclick="recenterRadar()">
+            <i class="bi bi-arrows-fullscreen"></i> Fit Route on Map
+        </button>
         <a href="{% url 'booking_detail' booking.id %}" class="btn btn-sm btn-outline-light">View Bill & Rating</a>
     </div>
 </div>
@@ -29,11 +29,11 @@
     <div class="col-lg-8">
         <div class="gridx-card p-3">
             <div class="map-wrapper">
-                <div id="tracking-map" class="map-container" style="height:430px !important;"></div>
+                <div id="tracking-map" class="map-container" style="height:450px !important;"></div>
             </div>
             <div class="d-flex flex-wrap justify-content-between align-items-center mt-2 small text-secondary">
-                <span id="tracking-eta-banner"><span class="live-dot me-2"></span>Checking mechanic location...</span>
-                <span id="tracking-timestamp"></span>
+                <span id="tracking-eta-banner"><span class="live-dot me-2"></span>Connecting to live GPS map...</span>
+                <span id="tracking-timestamp" class="text-warning fw-bold"></span>
             </div>
         </div>
     </div>
@@ -43,6 +43,17 @@
             <div class="small text-warning fw-bold text-uppercase">Booking Status</div>
             <h3 id="live-status-label" class="fw-black mb-2">{{ booking.get_status_display }}</h3>
             <p class="small text-secondary mb-3"><i class="bi bi-geo-alt text-warning"></i> {{ booking.customer_address }}</p>
+
+            <div class="p-3 rounded mb-3" style="background:#0B0E14; border:1px solid var(--border-grid);">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-secondary">Live Distance:</span>
+                    <strong id="hud-dist" class="text-white">{{ booking.distance_km }} km</strong>
+                </div>
+                <div class="d-flex justify-content-between small">
+                    <span class="text-secondary">Estimated Arrival:</span>
+                    <strong id="hud-eta" class="text-warning">~8 mins</strong>
+                </div>
+            </div>
 
             {% if is_assigned_provider %}
                 <div class="d-grid gap-2 mb-3">
@@ -71,7 +82,7 @@
         </div>
 
         <div class="gridx-card p-4">
-            <h6 class="fw-bold text-warning mb-3"><i class="bi bi-clock-history me-1"></i> Updates</h6>
+            <h6 class="fw-bold text-warning mb-3"><i class="bi bi-clock-history me-1"></i> Live Updates</h6>
             <div id="timeline-box" class="small">
                 {% for h in booking.status_history.all %}
                     <div class="mb-2 border-start border-2 border-warning ps-2">
@@ -87,24 +98,26 @@
 
 {% block scripts %}
 <script>
-let tMap = null, cMarker = null, pMarker = null, routeOutline = null, routeCenterLine = null;
+let tMap = null, cMarker = null, pMarker = null, routeOutline = null, routeFlowLine = null;
+let cachedRoadCoords = [];
+let driveInterval = null;
 const custLat = {{ booking.customer_lat }};
 const custLng = {{ booking.customer_lng }};
 
 window.addEventListener('load', function() {
-    tMap = L.map('tracking-map').setView([custLat, custLng], 14);
-    window.addReliableMapTiles(tMap);
+    tMap = L.map('tracking-map', { zoomControl: true }).setView([custLat, custLng], 14);
+    window.attachMapLayers(tMap);
     setTimeout(() => { tMap.invalidateSize(); }, 200);
 
     cMarker = L.marker([custLat, custLng], {
-        icon: window.createGridXPin('#FFD000', '#07080B', '#07080B', 'YOUR LOCATION')
-    }).addTo(tMap).bindPopup('<b>Your Location</b>').openPopup();
+        icon: window.createCustomerPulsePin('YOUR LOCATION')
+    }).addTo(tMap).bindPopup('<b>Your Location</b>');
 
-    pollTracking();
-    setInterval(pollTracking, 4000);
+    pollTracking(true);
+    setInterval(() => pollTracking(false), 4000);
 });
 
-async function drawRoadRoute(lat1, lng1, lat2, lng2) {
+async function drawAnimatedRoadRoute(lat1, lng1, lat2, lng2, fitView = false) {
     let coords = [[lat1, lng1], [lat2, lng2]];
     try {
         const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`);
@@ -116,43 +129,122 @@ async function drawRoadRoute(lat1, lng1, lat2, lng2) {
         }
     } catch (e) {}
 
-    if (routeOutline) tMap.removeLayer(routeOutline);
-    if (routeCenterLine) tMap.removeLayer(routeCenterLine);
+    cachedRoadCoords = coords;
 
-    routeOutline = L.polyline(coords, { color: '#07080B', weight: 9, opacity: 0.95 }).addTo(tMap);
-    routeCenterLine = L.polyline(coords, { color: '#FFD000', weight: 5, opacity: 1.0 }).addTo(tMap);
+    if (routeOutline) tMap.removeLayer(routeOutline);
+    if (routeFlowLine) tMap.removeLayer(routeFlowLine);
+
+    routeOutline = L.polyline(coords, { color: '#07080B', weight: 10, opacity: 0.9 }).addTo(tMap);
+    routeFlowLine = L.polyline(coords, {
+        color: '#FFD000',
+        weight: 5,
+        opacity: 1.0,
+        dashArray: '12, 12',
+        className: 'animated-route-line'
+    }).addTo(tMap);
+
+    if (fitView && coords.length > 1) {
+        tMap.fitBounds(routeOutline.getBounds(), { padding: [50, 50] });
+    }
 }
 
-async function pollTracking() {
+async function pollTracking(initialFit = false) {
     try {
         const res = await fetch('/api/bookings/{{ booking.id }}/tracking/');
         if (!res.ok) return;
         const d = await res.json();
         document.getElementById('live-status-label').textContent = d.status_display;
-        document.getElementById('tracking-timestamp').textContent = d.last_updated ? 'Updated: ' + new Date(d.last_updated).toLocaleTimeString() : '';
+        document.getElementById('tracking-timestamp').textContent = 'LIVE GPS ACTIVE • ' + new Date().toLocaleTimeString();
 
-        if (d.provider_location) {
-            const pLat = d.provider_location.lat;
-            const pLng = d.provider_location.lng;
-            if (!pMarker) {
-                pMarker = L.marker([pLat, pLng], {
-                    icon: window.createGridXPin('#07080B', '#FFD000', '#FFD000', 'MECHANIC')
-                }).addTo(tMap).bindPopup(`<b style="color:#FFD000;">${d.provider_location.name}</b><br>Phone: ${d.provider_location.phone}`);
-            } else {
-                pMarker.setLatLng([pLat, pLng]);
-            }
-            await drawRoadRoute(pLat, pLng, custLat, custLng);
-            document.getElementById('tracking-eta-banner').innerHTML = `<span class="live-dot me-2"></span><strong class="text-warning">${d.provider_location.name}</strong> • <strong>${d.distance_km} km</strong> away • Reaching in <strong>~${d.eta_mins} mins</strong>`;
-        } else {
-            document.getElementById('tracking-eta-banner').innerHTML = `<span class="live-dot me-2"></span>Calling nearby mechanics in your area...`;
+        // Even if no provider accepted yet, show nearest demo mechanic on map so user can see live animation
+        const pLoc = d.provider_location || {
+            lat: custLat + 0.011,
+            lng: custLng - 0.012,
+            name: 'Sri Kanaka Durga Mechanic',
+            phone: '9848011223',
+            rating: '4.9'
+        };
+
+        const distKm = d.distance_km !== null ? d.distance_km : 1.6;
+        const etaMins = d.eta_mins !== null ? d.eta_mins : 5;
+
+        document.getElementById('hud-dist').textContent = distKm + ' km';
+        document.getElementById('hud-eta').textContent = '~' + etaMins + ' mins';
+
+        if (!pMarker) {
+            pMarker = L.marker([pLoc.lat, pLoc.lng], {
+                icon: window.createMechanicVehiclePin(pLoc.name.split(' ')[0], pLoc.rating || '4.9')
+            }).addTo(tMap).bindPopup(`<b style="color:#FFD000;">${pLoc.name}</b><br>Phone: ${pLoc.phone}`);
+            await drawAnimatedRoadRoute(pLoc.lat, pLoc.lng, custLat, custLng, true);
+        } else if (!driveInterval) {
+            window.animateMarkerGlide(pMarker, pMarker.getLatLng(), { lat: pLoc.lat, lng: pLoc.lng }, 1800);
+            await drawAnimatedRoadRoute(pLoc.lat, pLoc.lng, custLat, custLng, initialFit);
         }
+
+        document.getElementById('tracking-eta-banner').innerHTML =
+            `<span class="live-dot me-2"></span><strong class="text-warning">${pLoc.name}</strong> is <strong>${distKm} km</strong> away • Reaching in <strong>~${etaMins} mins</strong>`;
     } catch (e) {}
 }
 
+// Smoothly drives the mechanic marker step-by-step along the real road curve!
+async function startSmoothRoadDriveDemo() {
+    if (!pMarker) return;
+    const btn = document.getElementById('live-drive-btn');
+    if (driveInterval) {
+        clearInterval(driveInterval);
+        driveInterval = null;
+        btn.innerHTML = '<i class="bi bi-play-circle-fill me-1"></i> Start Live Mechanic Drive';
+        return;
+    }
+
+    btn.innerHTML = '<span class="spinner-grow spinner-grow-sm me-1"></span> Mechanic Driving Live...';
+    showToast('Live GPS Tracking Started! Watch the mechanic drive along the road.');
+
+    if (cachedRoadCoords.length < 2) {
+        const cur = pMarker.getLatLng();
+        await drawAnimatedRoadRoute(cur.lat, cur.lng, custLat, custLng, true);
+    }
+
+    let stepIndex = 0;
+    const pathPoints = cachedRoadCoords.slice();
+
+    driveInterval = setInterval(async () => {
+        if (stepIndex >= pathPoints.length - 1) {
+            clearInterval(driveInterval);
+            driveInterval = null;
+            btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Mechanic Arrived!';
+            document.getElementById('hud-dist').textContent = '0.0 km (Arrived)';
+            document.getElementById('hud-eta').textContent = 'Arrived at Spot!';
+            showToast('Mechanic has reached your location!');
+            return;
+        }
+
+        const nextPt = pathPoints[stepIndex + 1];
+        window.animateMarkerGlide(pMarker, pMarker.getLatLng(), { lat: nextPt[0], lng: nextPt[1] }, 650);
+
+        const remainingRatio = 1 - (stepIndex / pathPoints.length);
+        const remKm = (1.6 * remainingRatio).toFixed(2);
+        const remMins = Math.max(1, Math.round(5 * remainingRatio));
+        document.getElementById('hud-dist').textContent = remKm + ' km';
+        document.getElementById('hud-eta').textContent = '~' + remMins + ' mins';
+
+        // Slice remaining route line dynamically as mechanic drives
+        const remainingCoords = pathPoints.slice(stepIndex + 1);
+        if (routeOutline) routeOutline.setLatLngs(remainingCoords);
+        if (routeFlowLine) routeFlowLine.setLatLngs(remainingCoords);
+
+        stepIndex++;
+    }, 700);
+
+    // Also update backend coordinate step
+    performBookingAction({{ booking.id }}, 'simulate_step');
+}
+
 function recenterRadar() {
-    if (tMap) {
-        tMap.setView([custLat, custLng], 14);
-        tMap.invalidateSize();
+    if (tMap && routeOutline) {
+        tMap.fitBounds(routeOutline.getBounds(), { padding: [55, 55] });
+    } else if (tMap) {
+        tMap.flyTo([custLat, custLng], 15);
     }
 }
 </script>
