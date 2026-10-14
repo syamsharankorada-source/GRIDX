@@ -7,10 +7,10 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
         <button id="live-drive-btn" class="btn btn-sm btn-gridx" onclick="startSmoothRoadDriveDemo()">
-            <i class="bi bi-play-circle-fill me-1"></i> Start Live Mechanic Drive
+            <i aria-hidden="true" class="bi bi-play-circle-fill me-1"></i> Start Live Mechanic Drive
         </button>
         <button class="btn btn-sm btn-gridx-outline" onclick="recenterRadar()">
-            <i class="bi bi-arrows-fullscreen"></i> Fit Route on Map
+            <i aria-hidden="true" class="bi bi-arrows-fullscreen"></i> Fit Route on Map
         </button>
         <a href="{% url 'booking_detail' booking.id %}" class="btn btn-sm btn-outline-light">View Bill & Rating</a>
     </div>
@@ -19,7 +19,7 @@
 <div class="stepper-wrapper mb-4">
     {% for key, label, icon in steps %}
         <div class="stepper-item {% if forloop.counter0 < current_idx %}completed{% elif forloop.counter0 == current_idx %}active{% endif %}">
-            <i class="bi {{ icon }} d-block fs-5 mb-1"></i>
+            <i aria-hidden="true" class="bi {{ icon }} d-block fs-5 mb-1"></i>
             <div style="font-size:0.75rem;">{{ label }}</div>
         </div>
     {% endfor %}
@@ -29,7 +29,7 @@
     <div class="col-lg-8">
         <div class="gridx-card p-3">
             <div class="map-wrapper">
-                <div id="tracking-map" class="map-container" style="height:450px !important;"></div>
+                <div id="tracking-map" role="region" aria-label="Interactive map" class="map-container" style="height:450px !important;"></div>
             </div>
             <div class="d-flex flex-wrap justify-content-between align-items-center mt-2 small text-secondary">
                 <span id="tracking-eta-banner"><span class="live-dot me-2"></span>Connecting to live GPS map...</span>
@@ -42,7 +42,7 @@
         <div class="gridx-card p-4 mb-3 border-top border-3 border-warning">
             <div class="small text-warning fw-bold text-uppercase">Booking Status</div>
             <h3 id="live-status-label" class="fw-black mb-2">{{ booking.get_status_display }}</h3>
-            <p class="small text-secondary mb-3"><i class="bi bi-geo-alt text-warning"></i> {{ booking.customer_address }}</p>
+            <p class="small text-secondary mb-3"><i aria-hidden="true" class="bi bi-geo-alt text-warning"></i> {{ booking.customer_address }}</p>
 
             <div class="p-3 rounded mb-3" style="background:#0B0E14; border:1px solid var(--border-grid);">
                 <div class="d-flex justify-content-between small mb-1">
@@ -82,7 +82,7 @@
         </div>
 
         <div class="gridx-card p-4">
-            <h6 class="fw-bold text-warning mb-3"><i class="bi bi-clock-history me-1"></i> Live Updates</h6>
+            <h6 class="fw-bold text-warning mb-3"><i aria-hidden="true" class="bi bi-clock-history me-1"></i> Live Updates</h6>
             <div id="timeline-box" class="small">
                 {% for h in booking.status_history.all %}
                     <div class="mb-2 border-start border-2 border-warning ps-2">
@@ -193,7 +193,7 @@ async function startSmoothRoadDriveDemo() {
     if (driveInterval) {
         clearInterval(driveInterval);
         driveInterval = null;
-        btn.innerHTML = '<i class="bi bi-play-circle-fill me-1"></i> Start Live Mechanic Drive';
+        btn.innerHTML = '<i aria-hidden="true" class="bi bi-play-circle-fill me-1"></i> Start Live Mechanic Drive';
         return;
     }
 
@@ -212,7 +212,7 @@ async function startSmoothRoadDriveDemo() {
         if (stepIndex >= pathPoints.length - 1) {
             clearInterval(driveInterval);
             driveInterval = null;
-            btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Mechanic Arrived!';
+            btn.innerHTML = '<i aria-hidden="true" class="bi bi-check-circle-fill me-1"></i> Mechanic Arrived!';
             document.getElementById('hud-dist').textContent = '0.0 km (Arrived)';
             document.getElementById('hud-eta').textContent = 'Arrived at Spot!';
             showToast('Mechanic has reached your location!');

@@ -4,7 +4,7 @@
     <div class="col-lg-4">
         <div class="gridx-card p-4 h-100">
             <span class="badge badge-domain-outdoor mb-2">EASY HELP GUIDE</span>
-            <h4 class="fw-black text-warning mb-2"><i class="bi bi-chat-dots-fill me-1"></i> GRIDX HELP ASSISTANT</h4>
+            <h4 class="fw-black text-warning mb-2"><i aria-hidden="true" class="bi bi-chat-dots-fill me-1"></i> GRIDX HELP ASSISTANT</h4>
             <p class="small text-secondary mb-3">
                 Not sure which mechanic to call or how much it costs? Tap any question below to get simple, clear advice.
             </p>
@@ -51,8 +51,8 @@
             </div>
 
             <form onsubmit="sendAIMessage(event, 'studio-input', 'studio-messages')" class="p-3 border-top border-secondary d-flex gap-2">
-                <input id="studio-input" type="text" class="form-control gridx-input" placeholder="Type your problem here (e.g., bike stopped, tyre puncture)...">
-                <button type="submit" class="btn btn-gridx px-4"><i class="bi bi-send-fill"></i> Ask</button>
+                <input id="studio-input" aria-label="Describe your problem to the assistant" type="text" class="form-control gridx-input" placeholder="Type your problem here (e.g., bike stopped, tyre puncture)...">
+                <button type="submit" class="btn btn-gridx px-4"><i aria-hidden="true" class="bi bi-send-fill"></i> Ask</button>
             </form>
         </div>
     </div>

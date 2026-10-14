@@ -22,7 +22,7 @@
                 <div class="display-5 fw-black">₹{{ provider.total_earnings }}</div>
                 <div class="small fw-bold">Completed Jobs: {{ provider.completed_jobs_count }}</div>
             </div>
-            <i class="bi bi-wallet2 display-4"></i>
+            <i aria-hidden="true" class="bi bi-wallet2 display-4"></i>
         </div>
     </div>
     <div class="col-md-4">
@@ -49,7 +49,7 @@
     <div class="col-md-4">
         <div class="gridx-card p-4 h-100 d-flex flex-column justify-content-between">
             <div>
-                <h6 class="fw-bold text-warning mb-1"><i class="bi bi-robot"></i> AI Technical Repair Helper</h6>
+                <h6 class="fw-bold text-warning mb-1"><i aria-hidden="true" class="bi bi-robot"></i> AI Technical Repair Helper</h6>
                 <p class="small text-secondary mb-2">Need wiring diagrams, starter relay checks, or safety steps?</p>
             </div>
             <button class="btn btn-sm btn-gridx-outline w-100" onclick="toggleAIDrawer(); sendQuickPrompt('Give me mechanic technical diagnostic steps for a no-crank vehicle.')">
@@ -63,7 +63,7 @@
     <div class="col-lg-6">
         <div class="gridx-card p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold text-warning mb-0"><i class="bi bi-bell-fill me-1"></i> Incoming Customer Requests</h5>
+                <h5 class="fw-bold text-warning mb-0"><i aria-hidden="true" class="bi bi-bell-fill me-1"></i> Incoming Customer Requests</h5>
                 <span class="badge bg-warning text-dark fw-black">{{ incoming_requests|length }} Waiting</span>
             </div>
 
@@ -75,7 +75,7 @@
                 </div>
                 <h5 class="fw-bold mb-1">#{{ item.booking.id }} — {{ item.booking.category.name }}</h5>
                 <p class="text-white mb-1">"{{ item.booking.issue_description }}"</p>
-                <p class="small text-secondary mb-3"><i class="bi bi-geo-alt text-warning"></i> {{ item.booking.customer_address }}</p>
+                <p class="small text-secondary mb-3"><i aria-hidden="true" class="bi bi-geo-alt text-warning"></i> {{ item.booking.customer_address }}</p>
                 <div class="d-flex gap-2">
                     <button class="btn btn-gridx flex-grow-1" onclick="stopAlarmSound(); performBookingAction({{ item.booking.id }}, 'accept')">
                         ✅ ACCEPT & START GOING
@@ -95,7 +95,7 @@
 
     <div class="col-lg-6">
         <div class="gridx-card p-4 mb-3">
-            <h5 class="fw-bold mb-3"><i class="bi bi-tools text-warning me-1"></i> Your Accepted Jobs</h5>
+            <h5 class="fw-bold mb-3"><i aria-hidden="true" class="bi bi-tools text-warning me-1"></i> Your Accepted Jobs</h5>
             {% for job in assigned_bookings %}
             <div class="p-3 rounded-3 mb-3 border border-warning" style="background:#0B0E15;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -123,16 +123,16 @@
 
         <!-- MECHANIC ISSUE / CUSTOMER REPORT CARD -->
         <div class="gridx-card p-3 border border-danger">
-            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-flag-fill me-1"></i> Report Issue with a Customer</h6>
+            <h6 class="fw-bold text-danger mb-2"><i aria-hidden="true" class="bi bi-flag-fill me-1"></i> Report Issue with a Customer</h6>
             <div class="mb-2">
-                <select id="mech-dispute-type" class="form-select form-select-sm">
+                <select id="mech-dispute-type" aria-label="Dispute type" class="form-select form-select-sm">
                     <option value="FAKE_REQUEST">Customer Not Answering / Fake Location</option>
                     <option value="BEHAVIOR">Rude Behavior / Refused Fair Payment</option>
                     <option value="SAFETY">Unsafe Highway / Night Spot</option>
                 </select>
             </div>
             <div class="d-flex gap-2">
-                <input id="mech-dispute-desc" type="text" class="form-control form-control-sm" placeholder="Write customer issue...">
+                <input id="mech-dispute-desc" aria-label="Describe the customer issue" type="text" class="form-control form-control-sm" placeholder="Write customer issue...">
                 <button type="button" class="btn btn-sm btn-danger fw-bold" onclick="submitProviderDispute()">Report</button>
             </div>
         </div>

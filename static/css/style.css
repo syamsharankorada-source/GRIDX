@@ -216,3 +216,14 @@ h1, h2, h3, h4, .brand-logo { font-family: 'Space Grotesk', 'Inter', sans-serif;
     display: flex;
     gap: 6px;
 }
+
+
+/* ===== Accessibility ===== */
+.skip-link{position:absolute;top:8px;left:8px;z-index:3000;background:#FFC107;color:#0D1017;padding:.6rem 1rem;border-radius:.5rem;font-weight:700;text-decoration:none}
+:focus-visible{outline:3px solid #FFC107!important;outline-offset:2px!important}
+main:focus{outline:none!important}
+.text-secondary,.text-muted{color:#B4BDCA!important}
+::placeholder{color:#9AA4B2!important;opacity:1}
+a:not(.btn){text-decoration-thickness:1px;text-underline-offset:2px}
+.btn,.form-control,.form-select{min-height:38px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}

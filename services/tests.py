@@ -44,3 +44,48 @@ class GridXSystemTests(TestCase):
         c2 = APIClient()
         c2.force_authenticate(user=self.other)
         self.assertEqual(c2.get(f'/api/bookings/{b_id}/tracking/').status_code, 403)
+
+
+class GridXPublicPagesAndSecurityTests(TestCase):
+    """Smoke tests for public pages, auth guards, accessibility and security headers."""
+
+    def test_health_check_ok(self):
+        res = self.client.get('/health/')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['status'], 'ok')
+
+    def test_security_headers_present(self):
+        res = self.client.get('/health/')
+        self.assertEqual(res['X-Frame-Options'], 'DENY')
+        self.assertEqual(res['X-Content-Type-Options'], 'nosniff')
+
+    def test_home_page_has_accessibility_landmarks(self):
+        res = self.client.get('/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'Skip to main content')
+        self.assertContains(res, 'id="main-content"')
+        self.assertContains(res, 'lang="en"')
+
+    def test_dashboard_requires_login(self):
+        res = self.client.get('/dashboard/')
+        self.assertIn(res.status_code, (301, 302))
+
+    def test_auth_pages_render(self):
+        self.assertEqual(self.client.get('/users/login/').status_code, 200)
+        self.assertEqual(self.client.get('/users/register/').status_code, 200)
+
+    def test_api_rejects_anonymous(self):
+        for url in ('/api/catalog/', '/api/bookings/'):
+            self.assertIn(self.client.get(url).status_code, (401, 403))
+
+    def test_catalog_for_authenticated_user(self):
+        user = User.objects.create_user(username='apiuser', password='pw123456')
+        c = APIClient()
+        c.force_authenticate(user=user)
+        self.assertEqual(c.get('/api/catalog/').status_code, 200)
+
+    def test_pricing_is_itemized(self):
+        cat = ServiceCategory.objects.create(slug='tyre', name='Tyre Help', domain='OUTDOOR')
+        PricingRule.objects.create(category=cat, base_charge=Decimal('150.00'), per_km_charge=Decimal('10.00'), emergency_surcharge=Decimal('50.00'))
+        est = calculate_itemized_estimate(cat, distance_km=2.0, is_emergency=False)
+        self.assertEqual(est['base_charge'], '150.00')

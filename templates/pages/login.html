@@ -10,7 +10,7 @@
             </div>
 
             <div class="p-3 rounded mb-3" style="background:#0B0E14; border:1px dashed var(--gridx-yellow);">
-                <div class="small fw-bold text-warning mb-2"><i class="bi bi-lightning-fill"></i> 1-Click Instant Demo Credentials:</div>
+                <div class="small fw-bold text-warning mb-2"><i aria-hidden="true" class="bi bi-lightning-fill"></i> 1-Click Instant Demo Credentials:</div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-sm btn-gridx flex-grow-1" onclick="fillDemo('demo_customer', 'gridxpassword123')">
                         Fill Demo Customer
@@ -25,7 +25,7 @@
                 {% csrf_token %}
                 {% for field in form %}
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-secondary">{{ field.label }}</label>
+                        <label for="{{ field.id_for_label }}" class="form-label small fw-bold text-secondary">{{ field.label }}</label>
                         {{ field }}
                         {% if field.errors %}
                             <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>

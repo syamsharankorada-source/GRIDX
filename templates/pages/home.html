@@ -13,13 +13,13 @@
         <div class="d-flex flex-wrap gap-3">
             {% if user.is_authenticated %}
                 {% if user.provider_profile %}
-                    <a href="{% url 'provider_dashboard' %}" class="btn btn-gridx btn-lg"><i class="bi bi-speedometer2 me-1"></i> Open Provider Console</a>
+                    <a href="{% url 'provider_dashboard' %}" class="btn btn-gridx btn-lg"><i aria-hidden="true" class="bi bi-speedometer2 me-1"></i> Open Provider Console</a>
                 {% else %}
-                    <a href="{% url 'dashboard' %}" class="btn btn-gridx btn-lg"><i class="bi bi-lightning-charge-fill me-1"></i> Launch Customer Grid</a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-gridx btn-lg"><i aria-hidden="true" class="bi bi-lightning-charge-fill me-1"></i> Launch Customer Grid</a>
                 {% endif %}
             {% else %}
-                <a href="{% url 'register' %}?role=customer" class="btn btn-gridx btn-lg"><i class="bi bi-lightning-charge-fill me-1"></i> Request Emergency Help</a>
-                <a href="{% url 'register' %}?role=provider" class="btn btn-gridx-outline btn-lg"><i class="bi bi-tools me-1"></i> Join as Service Provider</a>
+                <a href="{% url 'register' %}?role=customer" class="btn btn-gridx btn-lg"><i aria-hidden="true" class="bi bi-lightning-charge-fill me-1"></i> Request Emergency Help</a>
+                <a href="{% url 'register' %}?role=provider" class="btn btn-gridx-outline btn-lg"><i aria-hidden="true" class="bi bi-tools me-1"></i> Join as Service Provider</a>
                 <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">Demo Login</a>
             {% endif %}
         </div>
@@ -28,7 +28,7 @@
         <div class="gridx-card-yellow p-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="badge bg-dark text-warning px-2 py-1">FROM PROBLEM TO SOLUTION</span>
-                <i class="bi bi-broadcast-pin fs-3"></i>
+                <i aria-hidden="true" class="bi bi-broadcast-pin fs-3"></i>
             </div>
             <h4 class="fw-black mb-3">REQUEST → MATCH → CONNECT → SOLVE</h4>
             <div class="row g-2 small fw-bold">
@@ -46,24 +46,24 @@
 <div class="row g-3 my-4">
     <div class="col-md-4">
         <div class="gridx-card p-3 h-100 border-start border-4 border-warning">
-            <h6 class="fw-bold text-warning mb-1"><i class="bi bi-cpu-fill me-1"></i> Smart Haversine + Skill Dispatch</h6>
+            <h6 class="fw-bold text-warning mb-1"><i aria-hidden="true" class="bi bi-cpu-fill me-1"></i> Smart Haversine + Skill Dispatch</h6>
             <p class="small text-secondary mb-0">Matches verified providers by skill compatibility, vehicle type, rating, and live GPS radius with atomic lock protection.</p>
         </div>
     </div>
     <div class="col-md-4">
         <div class="gridx-card p-3 h-100 border-start border-4 border-warning">
-            <h6 class="fw-bold text-warning mb-1"><i class="bi bi-receipt-cutoff me-1"></i> Transparent Itemized Pricing</h6>
+            <h6 class="fw-bold text-warning mb-1"><i aria-hidden="true" class="bi bi-receipt-cutoff me-1"></i> Transparent Itemized Pricing</h6>
             <p class="small text-secondary mb-0">Database-driven base fee, per-km distance charge, and emergency surcharges calculated before you book.</p>
         </div>
     </div>
     <div class="col-md-4">
         <div class="gridx-card p-3 h-100 border-start border-4 border-warning">
-            <h6 class="fw-bold text-warning mb-1"><i class="bi bi-robot me-1"></i> GRIDX AI Diagnostic Copilot</h6>
+            <h6 class="fw-bold text-warning mb-1"><i aria-hidden="true" class="bi bi-robot me-1"></i> GRIDX AI Diagnostic Copilot</h6>
             <p class="small text-secondary mb-0">Groq-powered vehicle symptom triage, safety checklists, and context-aware booking status tracking.</p>
         </div>
     </div>
 </div>
 
-<h4 class="fw-bold mb-3"><i class="bi bi-grid-1x2-fill text-warning me-2"></i>Explore Indoor & Outdoor Grid Categories</h4>
+<h4 class="fw-bold mb-3"><i aria-hidden="true" class="bi bi-grid-1x2-fill text-warning me-2"></i>Explore Indoor & Outdoor Grid Categories</h4>
 {% include 'components/service_cards.html' %}
 {% endblock %}
